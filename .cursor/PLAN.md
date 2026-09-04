@@ -2,7 +2,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission.
 
-**Status:** Phase 0 done. Next step: **1.1**.
+**Status:** Phase 0 done. **1.1 done.** Next step: **1.2**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -53,9 +53,9 @@ Do not add LangGraph, Ollama calls, or profiling yet.
 
 ### 1.1 Pytest and fixtures
 
-- Add `pytest` to `requirements.txt`.
-- Add `tests/conftest.py` and `tests/fixtures/sample_sales.csv` (tiny: date, region, revenue).
-- One test that the fixture loads with pandas.
+- [x] Add `pytest` to `requirements.txt`.
+- [x] Add `tests/conftest.py` and `tests/fixtures/sample_sales.csv` (tiny: date, region, revenue).
+- [x] One test that the fixture loads with pandas.
 - **Done when:** `pytest` passes from repo root.
 
 ### 1.2 Settings module
@@ -546,5 +546,5 @@ Unit/integration tests already exist from earlier phases.
 
 ## Current focus
 
-Next to implement: **1.1 Pytest and fixtures**.
-Do not start 1.1 until this plan is reviewed and you say to proceed.
+**1.1 done** (`pytest` from repo root: 1 passed). Next: **1.2 Settings module**.
+Do not start 1.2 until you say to proceed.
