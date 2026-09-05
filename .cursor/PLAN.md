@@ -2,7 +2,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission.
 
-**Status:** Phase 0 done. **1.1 done.** Next step: **1.2**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** Next step: **1.3**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -60,9 +60,9 @@ Do not add LangGraph, Ollama calls, or profiling yet.
 
 ### 1.2 Settings module
 
-- Add `src/config.py`: load `.env` via dotenv; typed settings for Ollama host/model env vars, all path vars, limits above; never hardcode model names.
-- Create missing path env vars in `.env.example` with placeholders.
-- Tests: defaults resolve; `UPLOAD_DIR` is read from env.
+- [x] Add `src/config.py`: load `.env` via dotenv; typed settings for Ollama host/model env vars, all path vars, limits above; never hardcode model names.
+- [x] Create missing path env vars in `.env.example` with placeholders.
+- [x] Tests: defaults resolve; `UPLOAD_DIR` is read from env.
 - **Done when:** settings tests pass; `.env.example` lists the new keys.
 
 ### 1.3 Logging
@@ -546,5 +546,5 @@ Unit/integration tests already exist from earlier phases.
 
 ## Current focus
 
-**1.1 done** (`pytest` from repo root: 1 passed). Next: **1.2 Settings module**.
-Do not start 1.2 until you say to proceed.
+**1.2 done.** Next: **1.3 Logging**.
+Do not start 1.3 until you say to proceed.
