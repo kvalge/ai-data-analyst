@@ -2,7 +2,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** Next step: **1.5**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** Next step: **1.6**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -90,9 +90,9 @@ Keep this small: catch mistakes in *our* modules, not third-party stubs.
 
 ### 1.5 Data-file input validation
 
-- Allowlist: `.csv`, `.xlsx`, `.xls`, `.json`.
-- Reject empty, wrong suffix, over `MAX_UPLOAD_BYTES`.
-- Tests for each reject path + one accept path (fixture).
+- [x] Allowlist: `.csv`, `.xlsx`, `.xls`, `.json`.
+- [x] Reject empty, wrong suffix, over `MAX_UPLOAD_BYTES`.
+- [x] Tests for each reject path + one accept path (fixture).
 - **Done when:** validator tests pass. No Streamlit yet.
 
 ### 1.6 Source record + file hash
@@ -563,5 +563,5 @@ Unit/integration tests already exist from earlier phases.
 
 ## Current focus
 
-**1.4 done.** Next: **1.5 Data-file input validation**.
-Do not start 1.5 until you say to proceed.
+**1.5 done.** Next: **1.6 Source record + file hash**.
+Do not start 1.6 until you say to proceed.
