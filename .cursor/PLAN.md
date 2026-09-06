@@ -2,7 +2,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** Next step: **1.6**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** Next step: **1.7**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -97,9 +97,9 @@ Keep this small: catch mistakes in *our* modules, not third-party stubs.
 
 ### 1.6 Source record + file hash
 
-- Dataclass/model: `source_id`, `kind=file`, `original_name`, `stored_path`, `sha256`, `created_at`.
-- Hash the stored bytes; `source_id` derived from hash (stable).
-- Tests with the fixture file.
+- [x] Dataclass/model: `source_id`, `kind=file`, `original_name`, `stored_path`, `sha256`, `created_at`.
+- [x] Hash the stored bytes; `source_id` derived from hash (stable).
+- [x] Tests with the fixture file.
 - **Done when:** two copies of the same bytes get the same `source_id`.
 
 ### 1.7 Persist upload to disk
@@ -164,6 +164,7 @@ Keep this small: catch mistakes in *our* modules, not third-party stubs.
 
 ### 1.15 Register Postgres as a source
 
+- Widen `DataSource.kind` from `Literal["file"]` to `Literal["file", "postgres"]`.
 - `kind=postgres`; do not store the password in the source registry (use env).
 - `list_available_sources` includes it when config is present.
 - Streamlit: short “use configured DB” toggle, not a password form in v1 (credentials stay in `.env`).
@@ -563,5 +564,5 @@ Unit/integration tests already exist from earlier phases.
 
 ## Current focus
 
-**1.5 done.** Next: **1.6 Source record + file hash**.
-Do not start 1.6 until you say to proceed.
+**1.6 done.** Next: **1.7 Persist upload to disk**.
+Do not start 1.7 until you say to proceed.
