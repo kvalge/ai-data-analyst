@@ -2,7 +2,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** Next step: **1.3**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** Next step: **1.3a** (then **1.4**).
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -19,6 +19,7 @@ Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 | RAG v1 | Chunk context files + keyword/TF-IDF retrieval. No vector DB and no embedding model until 6.6 (optional). |
 | MCP server | Not in v1. In-process MCP-shaped contracts only. |
 | Docker | Not in this plan. Phase 8 only documents when to revisit. |
+| Type checker | **pyright**, `basic` mode, **`src/` only**. No mypy, no strict mode, no pandas stubs, no CI/pre-commit hook in v1. Run by hand (`pyright`) like `pytest`. |
 | New env vars (placeholders in `.env.example`) | `CONTEXT_DIR`, `CACHE_DIR`, `ARTIFACT_DIR`, `CHECKPOINT_PATH`, `MAX_UPLOAD_BYTES`, `MAX_FULL_LOAD_ROWS`, `SAMPLE_N_ROWS`, `SANDBOX_TIMEOUT_S`, `MAX_PROMPT_CHARS` |
 
 **Default limits:** upload 50 MB; sample 50 rows; auto full-load pause above 100 000 rows or 50 MB; sandbox 30 s; prompt 8 000 characters.
@@ -67,9 +68,19 @@ Do not add LangGraph, Ollama calls, or profiling yet.
 
 ### 1.3 Logging
 
-- Add `src/logging_setup.py`: configure root logging from `LOG_LEVEL`; no `print` in library code.
-- Test: logger emits at the configured level (caplog).
+- [x] Add `src/logging_setup.py`: configure root logging from `LOG_LEVEL`; no `print` in library code.
+- [x] Test: logger emits at the configured level (caplog).
 - **Done when:** test passes.
+
+### 1.3a Type checker (pyright on `src/`)
+
+Keep this small: catch mistakes in *our* modules, not third-party stubs.
+
+- Add pinned `pyright` next to `pytest` in `requirements.txt` (same install story; no extra lock/CI stack).
+- Add `pyrightconfig.json`: `include: ["src"]`, exclude `venv`, `typeCheckingMode: "basic"`.
+- Do not type-check `tests/`, `scripts/`, or pandas/Streamlit call sites beyond what `src/` already imports.
+- README: one line that `pyright` is the typecheck command.
+- **Done when:** `pyright` exits 0 on current `src/`. Do not enable `strict` or add mypy.
 
 ### 1.4 Runtime directories
 
@@ -109,8 +120,13 @@ Do not add LangGraph, Ollama calls, or profiling yet.
 
 - Add `streamlit` to `requirements.txt`.
 - `src/ui/app.py`: title, sidebar placeholder, main placeholder. No uploads yet.
+- Call `configure_logging` at app startup. After `import streamlit`, inspect
+  `logging.getLogger().handlers` once: confirm Streamlit's extra handler was
+  removed (we drop StreamHandler subclasses that write to stderr/stdout). If
+  Streamlit uses a different stream or a non-StreamHandler, adjust
+  `_is_foreign_console_handler` then.
 - README: how to create venv, copy `.env`, `streamlit run src/ui/app.py`.
-- **Done when:** app starts (manual); README documents it.
+- **Done when:** app starts (manual); README documents it; no duplicate log lines.
 
 ### 1.10 Streamlit: data file upload + list
 
@@ -541,10 +557,11 @@ Unit/integration tests already exist from earlier phases.
 - LangSmith / cloud eval
 - Container sandbox implementation
 - Dashboard code generation (7.5)
+- Second type checker (mypy), `strict` mode, pandas stub packages, pre-commit/CI for pyright
 
 ---
 
 ## Current focus
 
-**1.2 done.** Next: **1.3 Logging**.
-Do not start 1.3 until you say to proceed.
+**1.3 done.** Next: **1.3a Type checker**, then **1.4**.
+Do not start 1.3a until you say to proceed.
