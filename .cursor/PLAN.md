@@ -2,7 +2,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** Next step: **1.4**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** Next step: **1.5**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -84,8 +84,8 @@ Keep this small: catch mistakes in *our* modules, not third-party stubs.
 
 ### 1.4 Runtime directories
 
-- Add `src/storage/paths.py` (or similar): `ensure_runtime_dirs()` for uploads, context, cache, artifacts, checkpoints, logs.
-- Test with `tmp_path`.
+- [x] Add `src/storage/paths.py` (or similar): `ensure_runtime_dirs()` for uploads, context, cache, artifacts, checkpoints, logs.
+- [x] Test with `tmp_path`.
 - **Done when:** dirs are created idempotently.
 
 ### 1.5 Data-file input validation
@@ -563,5 +563,5 @@ Unit/integration tests already exist from earlier phases.
 
 ## Current focus
 
-**1.3a done.** Next: **1.4 Runtime directories**.
-Do not start 1.4 until you say to proceed.
+**1.4 done.** Next: **1.5 Data-file input validation**.
+Do not start 1.5 until you say to proceed.

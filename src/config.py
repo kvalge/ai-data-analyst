@@ -14,6 +14,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 DEFAULT_OLLAMA_HOST = "http://localhost:11434"
 DEFAULT_UPLOAD_DIR = "./data/uploads"
+# Logs are not an env var. ensure_runtime_dirs uses upload_dir.parent / "logs".
 DEFAULT_CONTEXT_DIR = "./data/context"
 DEFAULT_CACHE_DIR = "./data/cache"
 DEFAULT_ARTIFACT_DIR = "./data/artifacts"
