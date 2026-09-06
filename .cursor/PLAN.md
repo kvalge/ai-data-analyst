@@ -2,7 +2,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** Next step: **1.3a** (then **1.4**).
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** Next step: **1.4**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -76,10 +76,10 @@ Do not add LangGraph, Ollama calls, or profiling yet.
 
 Keep this small: catch mistakes in *our* modules, not third-party stubs.
 
-- Add pinned `pyright` next to `pytest` in `requirements.txt` (same install story; no extra lock/CI stack).
-- Add `pyrightconfig.json`: `include: ["src"]`, exclude `venv`, `typeCheckingMode: "basic"`.
-- Do not type-check `tests/`, `scripts/`, or pandas/Streamlit call sites beyond what `src/` already imports.
-- README: one line that `pyright` is the typecheck command.
+- [x] Add pinned `pyright` next to `pytest` in `requirements.txt` (same install story; no extra lock/CI stack).
+- [x] Add `pyrightconfig.json`: `include: ["src"]`, exclude `venv`, `typeCheckingMode: "basic"`.
+- [x] Do not type-check `tests/`, `scripts/`, or pandas/Streamlit call sites beyond what `src/` already imports.
+- [x] README: one line that `pyright` is the typecheck command.
 - **Done when:** `pyright` exits 0 on current `src/`. Do not enable `strict` or add mypy.
 
 ### 1.4 Runtime directories
@@ -563,5 +563,5 @@ Unit/integration tests already exist from earlier phases.
 
 ## Current focus
 
-**1.3 done.** Next: **1.3a Type checker**, then **1.4**.
-Do not start 1.3a until you say to proceed.
+**1.3a done.** Next: **1.4 Runtime directories**.
+Do not start 1.4 until you say to proceed.
