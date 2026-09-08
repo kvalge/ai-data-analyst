@@ -2,6 +2,8 @@
 alwaysApply: true
 ---
 
+<!-- RULES.md -->
+
 ## Core Rules
 - With code writing, move on step by step, only one task/functionality at a time.
 - After implementing a task, stop and ask for review before continuing.
@@ -18,6 +20,7 @@ alwaysApply: true
 - Add short, clear comments where they improve code understanding.
 - Use logging, not print statements, for anything beyond quick local debugging.
 - Organize code into purpose-based subfolders (e.g. `tools/`, `agent/`, `execution/` etc) rather than placing most files in one flat folder — mirror the project's module boundaries in the folder structure.
+- At the top of every file that supports comments, put the file's basename on its own line as a comment (`# config.py`, `<!-- PLAN.md -->`). It is the first line, except in files that require YAML frontmatter (then the comment is the first line after the frontmatter). Do this for every new or edited file. Skip formats that cannot have comments (strict JSON, CSV data).
 
 ## Project Consistency
 - Update `PROJECT_SPEC.md` whenever a real architectural or scope decision changes, it should always describe the project as it actually is right now.

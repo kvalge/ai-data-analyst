@@ -1,3 +1,5 @@
+<!-- PROJECT_SPEC.md -->
+
 # Private AI Data Analysis Application — Project Description
 
 ## Purpose

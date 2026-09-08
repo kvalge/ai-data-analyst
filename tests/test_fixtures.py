@@ -1,3 +1,5 @@
+# test_fixtures.py
+
 """Sanity checks for committed test fixtures."""
 
 import pandas as pd

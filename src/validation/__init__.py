@@ -1,3 +1,5 @@
+# __init__.py
+
 """Input and output validation."""
 
 from src.validation.data_files import (

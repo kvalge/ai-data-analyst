@@ -1,3 +1,5 @@
+# compare_ollama_models.py
+
 """Benchmark latency and compare outputs of the project's Ollama models.
 
 Reads OLLAMA_HOST and the four OLLAMA_MODEL_* names from .env, sends the

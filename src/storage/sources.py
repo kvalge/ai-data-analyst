@@ -1,3 +1,5 @@
+# sources.py
+
 """Data-source records identified by a stable hash of file bytes."""
 
 from __future__ import annotations

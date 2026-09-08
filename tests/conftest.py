@@ -1,3 +1,5 @@
+# conftest.py
+
 """Shared pytest fixtures."""
 
 from pathlib import Path

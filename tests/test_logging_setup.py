@@ -1,3 +1,5 @@
+# test_logging_setup.py
+
 """Tests for root logging configuration."""
 
 import io

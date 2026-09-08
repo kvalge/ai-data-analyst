@@ -1,3 +1,5 @@
+# logging_setup.py
+
 """Configure application logging from a level name (typically LOG_LEVEL)."""
 
 from __future__ import annotations

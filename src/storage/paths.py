@@ -1,3 +1,5 @@
+# paths.py
+
 """Create local runtime directories used by the app."""
 
 from __future__ import annotations
