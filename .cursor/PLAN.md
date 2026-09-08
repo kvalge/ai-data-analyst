@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** Next step: **1.13**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** Next step: **1.14**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -161,9 +161,9 @@ Keep this small: catch mistakes in *our* modules, not third-party stubs.
 
 ### 1.13 `read_file_sample`
 
-- Tool: path/`source_id` + `n_rows` (default `SAMPLE_N_ROWS`).
-- Return dtypes, column names, head as records; never the full file.
-- Tests with the fixture.
+- [x] Tool: path/`source_id` + `n_rows` (default `SAMPLE_N_ROWS`).
+- [x] Return dtypes, column names, head as records; never the full file.
+- [x] Tests with the fixture.
 - **Done when:** sample tests pass; optional “preview” button in UI calling this tool (no LLM).
 
 ### 1.14 Postgres settings + read-only connection test
@@ -245,9 +245,9 @@ Profiling is functions + cache. Guided pauses here are **Streamlit Continue butt
 - Orchestrate schema + DQ + EDA; write cache; return a compact summary (not the dataset).
 - Use sample or a bounded read; do not put the frame in logs.
 - Tests: cached vs fresh.
-- If a result_schema vs serialize-keys test is added, extract the 1.8
-  `test_source_to_result_keys_match_result_schema` pattern into a shared helper
-  (not before this second caller).
+- Result-schema vs serialize-keys checks use `tests/tool_schema.py`
+  (`assert_keys_match_required`), extracted when `read_file_sample` (1.13)
+  became the second caller.
 - **Done when:** tool tests pass.
 
 ### 2.12 `load_full_file` with threshold
@@ -578,6 +578,6 @@ Unit/integration tests already exist from earlier phases.
 
 ## Current focus
 
-**1.12 done.** Next: **1.13 `read_file_sample`**.
-Do not start 1.13 until you say to proceed.
-HITL mode lives in `st.session_state["hitl_mode"]` only. Tests cover default Standard, valid modes, and persistence across a second `ensure_hitl_mode` call.
+**1.13 done.** Next: **1.14 Postgres settings + read-only connection test**.
+Do not start 1.14 until you say to proceed.
+`read_file_sample` takes exactly one of `source_id` or `path` (path must stay under `UPLOAD_DIR`), returns columns/dtypes/head only. Sidebar Preview calls it with no LLM.

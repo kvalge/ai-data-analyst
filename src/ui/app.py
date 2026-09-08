@@ -1,7 +1,7 @@
 # app.py
 # streamlit run src/ui/app.py
 
-"""Streamlit shell: HITL mode, data and context uploads, no agent yet."""
+"""Streamlit shell: HITL mode, uploads, and a no-LLM file preview."""
 
 from __future__ import annotations
 
@@ -23,6 +23,7 @@ from src.storage.ingest import ingest_data_upload
 from src.storage.paths import ensure_runtime_dirs
 from src.storage.registry import RegistryError
 from src.tools.list_sources import list_available_sources
+from src.tools.read_sample import read_file_sample
 from src.ui.hitl import HITL_MODE_KEY, HitlMode, ensure_hitl_mode
 from src.validation.context_files import CONTEXT_FILE_SUFFIXES
 from src.validation.data_files import DATA_FILE_SUFFIXES
@@ -90,6 +91,8 @@ with st.sidebar:
         st.caption("No data files yet.")
     for row in listed["sources"]:
         st.write(f"{row['original_name']} (`{row['source_id'][:20]}…`)")
+        if st.button("Preview", key=f"preview-{row['source_id']}"):
+            st.session_state.preview_source_id = row["source_id"]
 
     st.subheader("Context files")
     context_listed = list_context_files(settings.context_dir)
@@ -98,4 +101,21 @@ with st.sidebar:
     for path in context_listed:
         st.write(path.name)
 
-st.info("Ask questions here after you add a data source.")
+preview_id = st.session_state.get("preview_source_id")
+if preview_id:
+    st.subheader("Preview")
+    try:
+        sample = read_file_sample(
+            upload_dir=settings.upload_dir,
+            n_rows=settings.sample_n_rows,
+            max_bytes=settings.max_upload_bytes,
+            source_id=preview_id,
+        )
+        st.caption(
+            f"{sample['row_count']} row(s) · " + ", ".join(sample["columns"])
+        )
+        st.dataframe(sample["rows"], hide_index=True)
+    except (FileValidationError, RegistryError) as exc:
+        st.error(str(exc))
+else:
+    st.info("Ask questions here after you add a data source. Preview a file from the sidebar.")

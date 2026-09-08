@@ -38,6 +38,14 @@ def list_file_sources(upload_dir: Path) -> list[DataSource]:
     return [_source_from_row(row, upload_dir, path) for row in rows]
 
 
+def get_file_source(upload_dir: Path, source_id: str) -> DataSource | None:
+    """Return the registered file source with `source_id`, or None."""
+    for source in list_file_sources(upload_dir):
+        if source.source_id == source_id:
+            return source
+    return None
+
+
 def save_file_source(
     path: Path,
     upload_dir: Path,

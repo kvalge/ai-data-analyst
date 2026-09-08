@@ -26,4 +26,5 @@ Use the sidebar to choose a HITL mode (Guided / Standard / Auto; default
 Standard), upload a data file (CSV / Excel / JSON), and optionally a
 domain-context file (markdown / text / PDF). Context files are stored separately
 and are not treated as datasets. Mode is session-only until the agent graph
-exists.
+exists. Use **Preview** on a data source to see column types and a short
+sample (`SAMPLE_N_ROWS`); the full file is never loaded into the UI.

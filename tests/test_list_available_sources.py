@@ -12,6 +12,7 @@ from src.tools.list_sources import (
     list_available_sources,
     source_to_result,
 )
+from tests.tool_schema import assert_keys_match_required
 
 
 def test_list_available_sources_empty(tmp_path: Path):
@@ -49,11 +50,7 @@ def test_list_available_sources_contract_is_complete():
 
 
 def test_source_to_result_keys_match_result_schema():
-    """Serialized keys stay aligned with the contract required list.
-
-    When a second tool needs this check (likely profile_source, 2.11), lift
-    the pattern into a shared helper instead of copying the test.
-    """
+    """Serialized keys stay aligned with the contract required list."""
     source = DataSource(
         source_id="file-abc",
         kind="file",
@@ -62,7 +59,7 @@ def test_source_to_result_keys_match_result_schema():
         sha256="abc",
         created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
     )
-    required = LIST_AVAILABLE_SOURCES.result_schema["properties"]["sources"][
+    items_schema = LIST_AVAILABLE_SOURCES.result_schema["properties"]["sources"][
         "items"
-    ]["required"]
-    assert set(source_to_result(source)) == set(required)
+    ]
+    assert_keys_match_required(source_to_result(source), items_schema)
