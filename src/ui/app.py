@@ -1,7 +1,7 @@
 # app.py
 # streamlit run src/ui/app.py
 
-"""Streamlit shell: data and context uploads, source list, no agent yet."""
+"""Streamlit shell: HITL mode, data and context uploads, no agent yet."""
 
 from __future__ import annotations
 
@@ -23,6 +23,7 @@ from src.storage.ingest import ingest_data_upload
 from src.storage.paths import ensure_runtime_dirs
 from src.storage.registry import RegistryError
 from src.tools.list_sources import list_available_sources
+from src.ui.hitl import HITL_MODE_KEY, HitlMode, ensure_hitl_mode
 from src.validation.context_files import CONTEXT_FILE_SUFFIXES
 from src.validation.data_files import DATA_FILE_SUFFIXES
 from src.validation.uploads import FileValidationError
@@ -40,6 +41,8 @@ context_types = sorted(suffix.lstrip(".") for suffix in CONTEXT_FILE_SUFFIXES)
 
 with st.sidebar:
     st.header("Session")
+    ensure_hitl_mode(st.session_state)
+    st.radio("HITL mode", options=list(HitlMode), key=HITL_MODE_KEY)
     uploaded = st.file_uploader("Data file", type=data_types, key="data_file")
     if uploaded is not None:
         payload = uploaded.getvalue()

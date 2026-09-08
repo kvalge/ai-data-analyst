@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** Next step: **1.12**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** Next step: **1.13**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -155,8 +155,8 @@ Keep this small: catch mistakes in *our* modules, not third-party stubs.
 
 ### 1.12 HITL mode in session state
 
-- Sidebar select: Guided / Standard / Auto; default Standard.
-- Store in `st.session_state` only (no graph yet).
+- [x] Sidebar select: Guided / Standard / Auto; default Standard.
+- [x] Store in `st.session_state` only (no graph yet).
 - **Done when:** mode persists across reruns in one session.
 
 ### 1.13 `read_file_sample`
@@ -578,6 +578,6 @@ Unit/integration tests already exist from earlier phases.
 
 ## Current focus
 
-**1.11 done.** Next: **1.12 HITL mode in session state**.
-Do not start 1.12 until you say to proceed.
-Context ingest tests cover markdown stored under context (not as a data source), rejected CSV, basename-only save, same-name overwrite, and temp-file cleanup. Sidebar click-through was not done in a browser.
+**1.12 done.** Next: **1.13 `read_file_sample`**.
+Do not start 1.13 until you say to proceed.
+HITL mode lives in `st.session_state["hitl_mode"]` only. Tests cover default Standard, valid modes, and persistence across a second `ensure_hitl_mode` call.

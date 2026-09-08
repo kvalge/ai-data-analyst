@@ -22,6 +22,8 @@ Set the four `OLLAMA_MODEL_*` names in `.env` (placeholders in `.env.example`). 
 streamlit run src/ui/app.py
 ```
 
-Use the sidebar to upload a data file (CSV / Excel / JSON) and, optionally, a
+Use the sidebar to choose a HITL mode (Guided / Standard / Auto; default
+Standard), upload a data file (CSV / Excel / JSON), and optionally a
 domain-context file (markdown / text / PDF). Context files are stored separately
-and are not treated as datasets.
+and are not treated as datasets. Mode is session-only until the agent graph
+exists.
