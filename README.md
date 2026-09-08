@@ -21,3 +21,7 @@ Set the four `OLLAMA_MODEL_*` names in `.env` (placeholders in `.env.example`). 
 ```powershell
 streamlit run src/ui/app.py
 ```
+
+Use the sidebar to upload a data file (CSV / Excel / JSON) and, optionally, a
+domain-context file (markdown / text / PDF). Context files are stored separately
+and are not treated as datasets.

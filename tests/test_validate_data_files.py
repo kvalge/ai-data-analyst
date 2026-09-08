@@ -61,7 +61,7 @@ def test_rejects_unreadable_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     path.write_text("date,region,revenue\n", encoding="utf-8")
 
     monkeypatch.setattr(
-        "src.validation.data_files.os.access", lambda _path, _mode: False
+        "src.validation.uploads.os.access", lambda _path, _mode: False
     )
 
     with pytest.raises(FileValidationError, match="readable"):
