@@ -1,7 +1,7 @@
 # app.py
 # streamlit run src/ui/app.py
 
-"""Streamlit shell: HITL mode, uploads, and a no-LLM file preview."""
+"""Streamlit shell: HITL mode, uploads, preview, and optional Postgres check."""
 
 from __future__ import annotations
 
@@ -17,6 +17,7 @@ if str(_REPO_ROOT) not in sys.path:
 import streamlit as st
 
 from src.config import load_settings
+from src.db.postgres import DatabaseError, check_postgres_connection, postgres_configured
 from src.logging_setup import configure_logging
 from src.storage.context import ingest_context_upload, list_context_files
 from src.storage.ingest import ingest_data_upload
@@ -44,6 +45,29 @@ with st.sidebar:
     st.header("Session")
     ensure_hitl_mode(st.session_state)
     st.radio("HITL mode", options=list(HitlMode), key=HITL_MODE_KEY)
+
+    st.subheader("Postgres")
+    if postgres_configured(settings):
+        st.caption(
+            f"{settings.db_user}@{settings.db_host}:{settings.db_port}/"
+            f"{settings.db_name}"
+        )
+        st.caption("The database role must be read-only (enforced in Postgres, not here).")
+        if st.button("Test connection", key="postgres_test"):
+            try:
+                check_postgres_connection(settings)
+                st.session_state.postgres_test_ok = True
+                st.session_state.postgres_test_error = None
+            except DatabaseError as exc:
+                st.session_state.postgres_test_ok = False
+                st.session_state.postgres_test_error = str(exc)
+        if st.session_state.get("postgres_test_ok"):
+            st.success("Postgres connection ok.")
+        elif st.session_state.get("postgres_test_error"):
+            st.error(st.session_state.postgres_test_error)
+    else:
+        st.caption("No database configured (set DB_NAME and DB_USER).")
+
     uploaded = st.file_uploader("Data file", type=data_types, key="data_file")
     if uploaded is not None:
         payload = uploaded.getvalue()

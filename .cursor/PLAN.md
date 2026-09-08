@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** Next step: **1.14**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** Next step: **1.15**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -168,9 +168,9 @@ Keep this small: catch mistakes in *our* modules, not third-party stubs.
 
 ### 1.14 Postgres settings + read-only connection test
 
-- Add `psycopg` (or `psycopg2`) when this step starts.
-- Connect from env; fail if connection is not usable; document that the DB role must be read-only (enforced in DB, not in Python).
-- Test with mocks (no real DB required in CI).
+- [x] Add `psycopg` (or `psycopg2`) when this step starts.
+- [x] Connect from env; fail if connection is not usable; document that the DB role must be read-only (enforced in DB, not in Python).
+- [x] Test with mocks (no real DB required in CI).
 - **Done when:** mock tests pass; UI can show connection ok/fail if env is set.
 
 ### 1.15 Register Postgres as a source
@@ -578,6 +578,6 @@ Unit/integration tests already exist from earlier phases.
 
 ## Current focus
 
-**1.13 done.** Next: **1.14 Postgres settings + read-only connection test**.
-Do not start 1.14 until you say to proceed.
-`read_file_sample` takes exactly one of `source_id` or `path` (path must stay under `UPLOAD_DIR`), returns columns/dtypes/head only. Sidebar Preview calls it with no LLM.
+**1.14 done.** Next: **1.15 Register Postgres as a source**.
+Do not start 1.15 until you say to proceed.
+Postgres probe uses `psycopg` and `SELECT 1`. Configured means `DB_NAME` + `DB_USER`. Read-only is a DB-role requirement, documented in README and `.env.example`. Tests inject `connect` (no live database).
