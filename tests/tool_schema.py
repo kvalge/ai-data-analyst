@@ -12,4 +12,5 @@ def assert_keys_match_required(
 ) -> None:
     """Require payload keys to equal the schema's `required` list."""
     required = schema["required"]
+    assert isinstance(required, list)
     assert set(payload) == set(required)
