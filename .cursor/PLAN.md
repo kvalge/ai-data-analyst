@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** Next step: **1.8**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** Next step: **1.9**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -23,6 +23,7 @@ Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 | Docker | Not in this plan. Phase 8 only documents when to revisit. |
 | Type checker | **pyright**, `basic` mode, **`src/` only**. No mypy, no strict mode, no pandas stubs, no CI/pre-commit hook in v1. Run by hand (`pyright`) like `pytest`. |
 | File source registry | **One** `registry.json` in `UPLOAD_DIR`. Single-user local; no per-source sidecars. 1.7 also adds `list_file_sources()` (not the 1.8 tool) for round-trip tests. |
+| Tool results | Success = plain dict matching `result_schema`. Failure = raise a domain exception. No per-tool ok/error wrapper. |
 | New env vars (placeholders in `.env.example`) | `CONTEXT_DIR`, `CACHE_DIR`, `ARTIFACT_DIR`, `CHECKPOINT_PATH`, `MAX_UPLOAD_BYTES`, `MAX_FULL_LOAD_ROWS`, `SAMPLE_N_ROWS`, `SANDBOX_TIMEOUT_S`, `MAX_PROMPT_CHARS` |
 
 **Default limits:** upload 50 MB; sample 50 rows; auto full-load pause above 100 000 rows or 50 MB; sandbox 30 s; prompt 8 000 characters.
@@ -116,9 +117,9 @@ Keep this small: catch mistakes in *our* modules, not third-party stubs.
 
 ### 1.8 Tool contract helper + `list_available_sources`
 
-- Add `src/tools/contracts.py`: name, description, JSON Schema for args, structured result (MCP-shaped; in-process).
-- Implement `list_available_sources` over the registry from 1.7.
-- Unit test: empty registry; one file source.
+- [x] Add `src/tools/contracts.py`: name, description, JSON Schema for args, structured result (MCP-shaped; in-process).
+- [x] Implement `list_available_sources` over the registry from 1.7.
+- [x] Unit test: empty registry; one file source.
 - **Done when:** tests pass; no LLM.
 
 ### 1.9 Streamlit skeleton
@@ -239,6 +240,9 @@ Profiling is functions + cache. Guided pauses here are **Streamlit Continue butt
 - Orchestrate schema + DQ + EDA; write cache; return a compact summary (not the dataset).
 - Use sample or a bounded read; do not put the frame in logs.
 - Tests: cached vs fresh.
+- If a result_schema vs serialize-keys test is added, extract the 1.8
+  `test_source_to_result_keys_match_result_schema` pattern into a shared helper
+  (not before this second caller).
 - **Done when:** tool tests pass.
 
 ### 2.12 `load_full_file` with threshold
@@ -569,5 +573,5 @@ Unit/integration tests already exist from earlier phases.
 
 ## Current focus
 
-**1.7 done.** Next: **1.8 Tool contract helper + list_available_sources**.
-Do not start 1.8 until you say to proceed.
+**1.8 done.** Next: **1.9 Streamlit skeleton**.
+Do not start 1.9 until you say to proceed.
