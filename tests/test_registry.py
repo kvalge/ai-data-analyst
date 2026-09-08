@@ -102,7 +102,7 @@ def test_list_file_sources_rejects_incomplete_entry(tmp_path: Path):
 
 
 def test_list_file_sources_rejects_unsupported_kind(tmp_path: Path):
-    """A non-file kind in the registry raises RegistryError until 1.15."""
+    """Postgres is env-backed; a postgres row in registry.json is invalid."""
     registry_path(tmp_path).write_text(
         """
         {

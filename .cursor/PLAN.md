@@ -2,9 +2,9 @@
 
 # Implementation plan
 
-Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission.
+Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission. Code `# TODO` / `# FIXME` comments are also listed under **Open TODOs (code)** below.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** Next step: **1.15**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** Next step: **2.1**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -175,10 +175,10 @@ Keep this small: catch mistakes in *our* modules, not third-party stubs.
 
 ### 1.15 Register Postgres as a source
 
-- Widen `DataSource.kind` from `Literal["file"]` to `Literal["file", "postgres"]`.
-- `kind=postgres`; do not store the password in the source registry (use env).
-- `list_available_sources` includes it when config is present.
-- Streamlit: short “use configured DB” toggle, not a password form in v1 (credentials stay in `.env`).
+- [x] Widen `DataSource.kind` from `Literal["file"]` to `Literal["file", "postgres"]`.
+- [x] `kind=postgres`; do not store the password in the source registry (use env).
+- [x] `list_available_sources` includes it when config is present.
+- [x] Streamlit: short “use configured DB” toggle, not a password form in v1 (credentials stay in `.env`).
 - **Done when:** list shows file sources and optionally one DB source.
 
 ---
@@ -564,6 +564,16 @@ Unit/integration tests already exist from earlier phases.
 
 ---
 
+## Open TODOs (code)
+
+Mirrored from `# TODO` / `# FIXME` in the repo. Update this table in the same change as the comment.
+
+| Location | TODO |
+|---|---|
+| `src/storage/registry.py` | A registry row whose stored file was deleted is still listed. |
+
+---
+
 ## Out of scope until asked
 
 - Standalone MCP server
@@ -578,6 +588,6 @@ Unit/integration tests already exist from earlier phases.
 
 ## Current focus
 
-**1.14 done.** Next: **1.15 Register Postgres as a source**.
-Do not start 1.15 until you say to proceed.
-Postgres probe uses `psycopg` and `SELECT 1`. Configured means `DB_NAME` + `DB_USER`. Read-only is a DB-role requirement, documented in README and `.env.example`. Tests inject `connect` (no live database).
+**1.15 done.** Phase 1 complete. Next: **2.1 Schema detection**.
+Do not start 2.1 until you say to proceed.
+Postgres is a `DataSource` synthesized from env + a session toggle. It is not written to `registry.json` (password never on disk). `list_available_sources` can append that one DB source beside file sources.

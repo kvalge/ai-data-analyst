@@ -104,7 +104,7 @@ def _resolve_sample_path(
         raise FileValidationError("Provide exactly one of source_id or path.")
     if has_id:
         source = get_file_source(upload_dir, str(source_id))
-        if source is None:
+        if source is None or source.stored_path is None:
             raise FileValidationError(f"Unknown source_id: {source_id}")
         return source.stored_path
 

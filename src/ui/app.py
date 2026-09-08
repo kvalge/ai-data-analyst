@@ -53,6 +53,7 @@ with st.sidebar:
             f"{settings.db_name}"
         )
         st.caption("The database role must be read-only (enforced in Postgres, not here).")
+        st.checkbox("Use configured database", key="use_configured_db")
         if st.button("Test connection", key="postgres_test"):
             try:
                 check_postgres_connection(settings)
@@ -110,12 +111,18 @@ with st.sidebar:
             st.error(st.session_state.context_upload_error)
 
     st.subheader("Data sources")
-    listed = list_available_sources(settings.upload_dir)
+    listed = list_available_sources(
+        settings.upload_dir,
+        settings=settings,
+        include_postgres=bool(st.session_state.get("use_configured_db")),
+    )
     if not listed["sources"]:
-        st.caption("No data files yet.")
+        st.caption("No data sources yet.")
     for row in listed["sources"]:
-        st.write(f"{row['original_name']} (`{row['source_id'][:20]}…`)")
-        if st.button("Preview", key=f"preview-{row['source_id']}"):
+        st.write(f"{row['original_name']} ({row['kind']}, `{row['source_id'][:20]}…`)")
+        if row["kind"] == "file" and st.button(
+            "Preview", key=f"preview-{row['source_id']}"
+        ):
             st.session_state.preview_source_id = row["source_id"]
 
     st.subheader("Context files")

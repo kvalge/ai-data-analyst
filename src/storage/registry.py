@@ -68,7 +68,7 @@ def save_file_source(
 
     saved = DataSource(
         source_id=incoming.source_id,
-        kind="file",  # Widen in 1.15 when postgres sources are added.
+        kind="file",
         original_name=incoming.original_name,
         stored_path=stored_path,
         sha256=incoming.sha256,
@@ -99,13 +99,14 @@ def _source_from_row(row: object, upload_dir: Path, path: Path) -> DataSource:
         created_at = datetime.fromisoformat(str(row["created_at"]))
     except (KeyError, TypeError, ValueError) as exc:
         raise RegistryError(f"Source registry entry is incomplete: {path}") from exc
-    if row.get("kind") != "file":  # Widen in 1.15 when postgres sources are added.
+    if row.get("kind") != "file":
+        # Postgres is env-backed (1.15); it is not persisted in registry.json.
         raise RegistryError(f"Unsupported source kind in registry: {path}")
     stored_path = (upload_dir / stored_name).resolve()
     # TODO: a registry row whose stored file was deleted is still listed (known gap).
     return DataSource(
         source_id=source_id,
-        kind="file",  # Widen in 1.15 when postgres sources are added.
+        kind="file",
         original_name=original_name,
         stored_path=stored_path,
         sha256=sha256,
@@ -121,7 +122,7 @@ def _write_registry(upload_dir: Path, sources: list[DataSource]) -> None:
                 "source_id": source.source_id,
                 "kind": source.kind,
                 "original_name": source.original_name,
-                "stored_name": source.stored_path.name,
+                "stored_name": source.stored_path.name if source.stored_path else "",
                 "sha256": source.sha256,
                 "created_at": source.created_at.isoformat(),
             }

@@ -27,6 +27,7 @@ alwaysApply: true
 - In case of `PROJECT_SPEC.md` changes, add a short "Key decisions" section at the bottom of the spec, not a full diff log — just one-line entries for major pivots (model changes, architecture changes etc), each pointing to roughly when it happened.
 - Write separate commit message for each meaningful spec change separately, with a clear commit message (git commit -m "spec: message text").
 - Update `.cursor/PLAN.md` (what is done or changed) *before* asking permission to proceed — the plan file must always reflect true current state, even if the session pauses mid-step.
+- Every `# TODO` or `# FIXME` in code must have a matching row in `.cursor/PLAN.md` under **Open TODOs (code)** (file path + one-line text). Add, change, or remove the plan row in the same change as the comment. Do not leave TODOs that exist only in the source tree.
 - If `PROJECT_SPEC.md` changes, review `.cursor/PLAN.md` for consistency and update it if the change affects remaining steps.
 - Keep `requirements.txt` updated whenever dependencies change.
 - Keep `.env.example` updated with all required environment variables, using placeholder values (never real secrets or real model names).
