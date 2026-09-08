@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** Next step: **1.9**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** Next step: **1.10**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -124,14 +124,17 @@ Keep this small: catch mistakes in *our* modules, not third-party stubs.
 
 ### 1.9 Streamlit skeleton
 
-- Add `streamlit` to `requirements.txt`.
-- `src/ui/app.py`: title, sidebar placeholder, main placeholder. No uploads yet.
-- Call `configure_logging` at app startup. After `import streamlit`, inspect
+- [x] Add `streamlit` to `requirements.txt`.
+- [x] `src/ui/app.py`: title, sidebar placeholder, main placeholder. No uploads yet.
+- [x] Call `configure_logging` at app startup. After `import streamlit`, inspect
   `logging.getLogger().handlers` once: confirm Streamlit's extra handler was
   removed (we drop StreamHandler subclasses that write to stderr/stdout). If
   Streamlit uses a different stream or a non-StreamHandler, adjust
   `_is_foreign_console_handler` then.
-- README: how to create venv, copy `.env`, `streamlit run src/ui/app.py`.
+  Streamlit 1.63: `import streamlit` does not attach a root console handler.
+  `streamlit run` logged `UI started` once (no duplicate lines). No change to
+  `_is_foreign_console_handler`.
+- [x] README: how to create venv, copy `.env`, `streamlit run src/ui/app.py`.
 - **Done when:** app starts (manual); README documents it; no duplicate log lines.
 
 ### 1.10 Streamlit: data file upload + list
@@ -573,5 +576,5 @@ Unit/integration tests already exist from earlier phases.
 
 ## Current focus
 
-**1.8 done.** Next: **1.9 Streamlit skeleton**.
-Do not start 1.9 until you say to proceed.
+**1.9 done.** Next: **1.10 Streamlit: data file upload + list**.
+Do not start 1.10 until you say to proceed.
