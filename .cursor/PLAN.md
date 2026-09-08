@@ -1,8 +1,10 @@
+<!-- PLAN.md -->
+
 # Implementation plan
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** Next step: **1.7**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** Next step: **1.8**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -20,6 +22,7 @@ Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 | MCP server | Not in v1. In-process MCP-shaped contracts only. |
 | Docker | Not in this plan. Phase 8 only documents when to revisit. |
 | Type checker | **pyright**, `basic` mode, **`src/` only**. No mypy, no strict mode, no pandas stubs, no CI/pre-commit hook in v1. Run by hand (`pyright`) like `pytest`. |
+| File source registry | **One** `registry.json` in `UPLOAD_DIR`. Single-user local; no per-source sidecars. 1.7 also adds `list_file_sources()` (not the 1.8 tool) for round-trip tests. |
 | New env vars (placeholders in `.env.example`) | `CONTEXT_DIR`, `CACHE_DIR`, `ARTIFACT_DIR`, `CHECKPOINT_PATH`, `MAX_UPLOAD_BYTES`, `MAX_FULL_LOAD_ROWS`, `SAMPLE_N_ROWS`, `SANDBOX_TIMEOUT_S`, `MAX_PROMPT_CHARS` |
 
 **Default limits:** upload 50 MB; sample 50 rows; auto full-load pause above 100 000 rows or 50 MB; sandbox 30 s; prompt 8 000 characters.
@@ -104,10 +107,12 @@ Keep this small: catch mistakes in *our* modules, not third-party stubs.
 
 ### 1.7 Persist upload to disk
 
-- Copy/save a validated file into `UPLOAD_DIR` using the source id in the filename; write a small sidecar JSON (or a registry JSON) so sources survive restart.
-- Idempotent if the same hash is uploaded again.
-- Tests on `tmp_path`.
-- **Done when:** save + re-list from disk works without Streamlit.
+- [x] Copy a validated file into `UPLOAD_DIR` as `{source_id}{suffix}` (suffix from `original_name`).
+- [x] **One** `registry.json` in `UPLOAD_DIR` (list of source dicts). Not per-file sidecars.
+- [x] **Idempotency:** read the registry first. If `source_id` is already present, return that `DataSource` and do **not** recopy bytes or change `created_at`. If it is new, copy then append and write the registry (temp file + replace).
+- [x] `list_file_sources(upload_dir)` reads `registry.json` back into `DataSource` objects (minimal helper; 1.8 wraps it as a tool).
+- [x] Tests on `tmp_path`: first save round-trips; second save of the same bytes is a no-op and keeps `created_at`.
+- **Done when:** save + `list_file_sources` round-trip works without Streamlit.
 
 ### 1.8 Tool contract helper + `list_available_sources`
 
@@ -564,5 +569,5 @@ Unit/integration tests already exist from earlier phases.
 
 ## Current focus
 
-**1.6 done.** Next: **1.7 Persist upload to disk**.
-Do not start 1.7 until you say to proceed.
+**1.7 done.** Next: **1.8 Tool contract helper + list_available_sources**.
+Do not start 1.8 until you say to proceed.
