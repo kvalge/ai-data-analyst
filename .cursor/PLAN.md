@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** Next step: **1.10**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** Next step: **1.11**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -139,8 +139,8 @@ Keep this small: catch mistakes in *our* modules, not third-party stubs.
 
 ### 1.10 Streamlit: data file upload + list
 
-- Sidebar uploader → validate (1.5) → persist (1.7) → show `list_available_sources` in the sidebar.
-- Show validation errors in the UI.
+- [x] Sidebar uploader → validate (1.5) → persist (1.7) → show `list_available_sources` in the sidebar.
+- [x] Show validation errors in the UI.
 - **Done when:** uploading the fixture CSV shows one source; bad file shows an error. Manual UI check.
 
 ### 1.11 Context-file upload slot (store only)
@@ -576,5 +576,6 @@ Unit/integration tests already exist from earlier phases.
 
 ## Current focus
 
-**1.9 done.** Next: **1.10 Streamlit: data file upload + list**.
-Do not start 1.10 until you say to proceed.
+**1.10 done.** Next: **1.11 Context-file upload slot**.
+Do not start 1.11 until you say to proceed.
+Ingest unit tests cover valid CSV, rejected `.txt`, save I/O errors, and temp-file cleanup. Sidebar click-through was not done in a browser.
