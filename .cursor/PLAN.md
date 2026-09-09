@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission. Code `# TODO` / `# FIXME` comments are also listed under **Open TODOs (code)** below.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** Next step: **2.7**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** Next step: **2.8**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -227,8 +227,9 @@ Profiling is functions + cache. Guided pauses here are **Streamlit Continue butt
 
 ### 2.7 DQ: outliers
 
-- Simple IQR (or z-score) on numeric columns; record bounds and counts.
-- Test with an obvious outlier.
+- [x] Simple IQR (or z-score) on numeric columns; record bounds and counts.
+- [x] Test with an obvious outlier.
+- **Done when:** Tukey 1.5-IQR bounds and outlier counts are tested on a fixture with an obvious outlier.
 
 ### 2.8 EDA: summary stats
 
@@ -612,6 +613,6 @@ Not current-step work and not code `# TODO`s. Revisit when the listed step runs.
 
 ## Current focus
 
-**2.6 done.** Next: **2.7 DQ: outliers**.
-Do not start 2.7 until you say to proceed.
-`detect_inconsistent_formatting(frame)` returns per-column lists of `mixed_date_formats`, `thousands_separators`, and/or `whitespace`. Uniform ISO dates are not mixed formats. Not a tool yet (2.11).
+**2.7 done.** Next: **2.8 EDA: summary stats**.
+Do not start 2.8 until you say to proceed.
+`detect_outliers(frame)` uses Tukey 1.5-IQR on numeric columns (not bool) and returns per-column `count`, `lower_bound`, `upper_bound`. Non-numeric columns are None. Not a tool yet (2.11).

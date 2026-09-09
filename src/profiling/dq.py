@@ -16,6 +16,7 @@ NULLS_RESULT_KEYS = frozenset({"null_counts", "null_pcts", "row_count"})
 DUPLICATES_RESULT_KEYS = frozenset({"duplicate_row_count", "row_count"})
 TYPE_MISMATCHES_RESULT_KEYS = frozenset({"type_mismatches", "row_count"})
 FORMATTING_RESULT_KEYS = frozenset({"formatting_issues", "row_count"})
+OUTLIERS_RESULT_KEYS = frozenset({"outliers", "row_count"})
 
 _ISO_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}(?:[ T]\S*)?$")
 _SLASH_DATE = re.compile(r"^\d{1,2}/\d{1,2}/\d{2,4}$")
@@ -23,6 +24,7 @@ _DOT_DATE = re.compile(r"^\d{1,2}\.\d{1,2}\.\d{2,4}$")
 # TODO: US-style grouping (1,234.56) is an arbitrary, unverified assumption;
 # European 1.234,56 is not flagged. Revisit locale detection, not a second regex.
 _THOUSANDS = re.compile(r"^\d{1,3}(,\d{3})+(\.\d+)?$")
+_IQR_MULTIPLIER = 1.5
 
 
 def detect_nulls(frame: pd.DataFrame) -> dict[str, Any]:
@@ -169,6 +171,54 @@ def _date_family(text: str) -> str | None:
     if _DOT_DATE.fullmatch(stripped):
         return "dot"
     return None
+
+
+def detect_outliers(frame: pd.DataFrame) -> dict[str, Any]:
+    """Return per-column Tukey IQR outlier bounds and counts on `frame`.
+
+    Numeric columns only (bool excluded). Bounds are Q1 - 1.5*IQR and
+    Q3 + 1.5*IQR. A constant column has IQR 0, so count is 0. Non-numeric
+    columns are None. An empty numeric column reports count 0 and null
+    bounds. Counts come from the given frame only.
+    """
+    row_count = int(len(frame))
+    outliers = {
+        str(column): _outlier_report(series) for column, series in frame.items()
+    }
+    _LOG.info(
+        "detect_outliers row_count=%s counts=%s",
+        row_count,
+        {
+            column: report["count"]
+            for column, report in outliers.items()
+            if report is not None
+        },
+    )
+    return {
+        "outliers": outliers,
+        "row_count": row_count,
+    }
+
+
+def _outlier_report(series: pd.Series) -> dict[str, Any] | None:
+    if pd.api.types.is_bool_dtype(series.dtype):
+        return None
+    if not pd.api.types.is_numeric_dtype(series.dtype):
+        return None
+    numeric = pd.Series(series.dropna(), dtype="float64")
+    if numeric.empty:
+        return {"count": 0, "lower_bound": None, "upper_bound": None}
+    q1 = float(numeric.quantile(0.25))
+    q3 = float(numeric.quantile(0.75))
+    iqr = q3 - q1
+    lower_bound = q1 - _IQR_MULTIPLIER * iqr
+    upper_bound = q3 + _IQR_MULTIPLIER * iqr
+    count = int(((numeric < lower_bound) | (numeric > upper_bound)).sum())
+    return {
+        "count": count,
+        "lower_bound": lower_bound,
+        "upper_bound": upper_bound,
+    }
 
 
 def _is_text_series(series: pd.Series) -> bool:
