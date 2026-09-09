@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission. Code `# TODO` / `# FIXME` comments are also listed under **Open TODOs (code)** below.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** Next step: **2.3**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** Next step: **2.4**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -202,8 +202,9 @@ Profiling is functions + cache. Guided pauses here are **Streamlit Continue butt
 
 ### 2.3 DQ: nulls
 
-- Per-column null count and %.
-- Test with a fixture that has nulls.
+- [x] Per-column null count and %.
+- [x] Test with a fixture that has nulls.
+- **Done when:** null counts and percentages are tested on a fixture with missing values.
 
 ### 2.4 DQ: duplicates
 
@@ -589,6 +590,6 @@ Mirrored from `# TODO` / `# FIXME` in the repo. Update this table in the same ch
 
 ## Current focus
 
-**2.2 done.** Next: **2.3 DQ: nulls**.
-Do not start 2.3 until you say to proceed.
-Profile cache is JSON under `CACHE_DIR`, one file per `source_id`, envelope includes `content_hash` (`DataSource.sha256`). Stale hash and corrupt JSON are misses.
+**2.3 done.** Next: **2.4 DQ: duplicates**.
+Do not start 2.4 until you say to proceed.
+`detect_nulls(frame)` returns per-column `null_counts` and `null_pcts` (0–100) plus `row_count` for the given sample frame. Not a tool yet (2.11).

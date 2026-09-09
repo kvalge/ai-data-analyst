@@ -25,3 +25,9 @@ def sample_sales_csv(fixtures_dir: Path) -> Path:
 def sample_glossary_md(fixtures_dir: Path) -> Path:
     """Path to the tiny glossary markdown used for context-file tests."""
     return fixtures_dir / "sample_glossary.md"
+
+
+@pytest.fixture
+def sample_nulls_csv(fixtures_dir: Path) -> Path:
+    """Path to the tiny CSV used for null-count DQ tests."""
+    return fixtures_dir / "sample_nulls.csv"
