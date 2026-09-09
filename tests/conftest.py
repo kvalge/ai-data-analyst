@@ -43,3 +43,9 @@ def sample_duplicates_csv(fixtures_dir: Path) -> Path:
 def sample_type_mismatches_csv(fixtures_dir: Path) -> Path:
     """Path to the tiny sales-shaped CSV used for type-mismatch DQ tests."""
     return fixtures_dir / "sample_type_mismatches.csv"
+
+
+@pytest.fixture
+def sample_inconsistent_formatting_csv(fixtures_dir: Path) -> Path:
+    """Path to the tiny sales-shaped CSV used for formatting DQ tests."""
+    return fixtures_dir / "sample_inconsistent_formatting.csv"

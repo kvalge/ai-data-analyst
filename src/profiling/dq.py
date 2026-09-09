@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any
 
 import pandas as pd
@@ -14,6 +15,14 @@ _LOG = logging.getLogger(__name__)
 NULLS_RESULT_KEYS = frozenset({"null_counts", "null_pcts", "row_count"})
 DUPLICATES_RESULT_KEYS = frozenset({"duplicate_row_count", "row_count"})
 TYPE_MISMATCHES_RESULT_KEYS = frozenset({"type_mismatches", "row_count"})
+FORMATTING_RESULT_KEYS = frozenset({"formatting_issues", "row_count"})
+
+_ISO_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}(?:[ T]\S*)?$")
+_SLASH_DATE = re.compile(r"^\d{1,2}/\d{1,2}/\d{2,4}$")
+_DOT_DATE = re.compile(r"^\d{1,2}\.\d{1,2}\.\d{2,4}$")
+# TODO: US-style grouping (1,234.56) is an arbitrary, unverified assumption;
+# European 1.234,56 is not flagged. Revisit locale detection, not a second regex.
+_THOUSANDS = re.compile(r"^\d{1,3}(,\d{3})+(\.\d+)?$")
 
 
 def detect_nulls(frame: pd.DataFrame) -> dict[str, Any]:
@@ -101,6 +110,64 @@ def _type_mismatch_kind(series: pd.Series) -> str | None:
         return "date_as_string"
     if numeric_ok > 0 or date_ok > 0:
         return "mixed"
+    return None
+
+
+def detect_inconsistent_formatting(frame: pd.DataFrame) -> dict[str, Any]:
+    """Return per-column formatting issues on `frame`.
+
+    v1 kinds, in this order when several apply: mixed date formats,
+    thousands separators, leading/trailing whitespace. Already-typed
+    numeric/datetime columns are skipped. Empty and all-null text
+    columns report no issues. Counts come from the given frame only.
+    """
+    row_count = int(len(frame))
+    formatting_issues = {
+        str(column): _formatting_issue_kinds(series)
+        for column, series in frame.items()
+    }
+    _LOG.info(
+        "detect_inconsistent_formatting row_count=%s issues=%s",
+        row_count,
+        {
+            column: kinds
+            for column, kinds in formatting_issues.items()
+            if kinds
+        },
+    )
+    return {
+        "formatting_issues": formatting_issues,
+        "row_count": row_count,
+    }
+
+
+def _formatting_issue_kinds(series: pd.Series) -> list[str]:
+    if not _is_text_series(series):
+        return []
+    texts = [str(value) for value in series.dropna()]
+    if not texts:
+        return []
+    kinds: list[str] = []
+    families = {
+        family for text in texts if (family := _date_family(text)) is not None
+    }
+    if len(families) > 1:
+        kinds.append("mixed_date_formats")
+    if any(_THOUSANDS.fullmatch(text.strip()) for text in texts):
+        kinds.append("thousands_separators")
+    if any(text != text.strip() for text in texts):
+        kinds.append("whitespace")
+    return kinds
+
+
+def _date_family(text: str) -> str | None:
+    stripped = text.strip()
+    if _ISO_DATE.fullmatch(stripped):
+        return "iso"
+    if _SLASH_DATE.fullmatch(stripped):
+        return "slash"
+    if _DOT_DATE.fullmatch(stripped):
+        return "dot"
     return None
 
 

@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission. Code `# TODO` / `# FIXME` comments are also listed under **Open TODOs (code)** below.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** Next step: **2.6**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** Next step: **2.7**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -220,11 +220,10 @@ Profiling is functions + cache. Guided pauses here are **Streamlit Continue butt
 
 ### 2.6 DQ: inconsistent formatting
 
-- Date formats, numeric thousands separators, whitespace in categoricals.
-- Test with a messy fixture.
-- If this adds a third parse kind next to `numeric_as_string` / `date_as_string`,
-  flatten `_type_mismatch_kind` into an ordered list of parsers (numeric first)
-  instead of another early-return `if`.
+- [x] Date formats, numeric thousands separators, whitespace in categoricals.
+- [x] Test with a messy fixture.
+- Did not add a third `_type_mismatch_kind` parser (separate `detect_inconsistent_formatting`).
+- **Done when:** mixed date formats, thousands separators, and categorical whitespace are reported.
 
 ### 2.7 DQ: outliers
 
@@ -581,6 +580,7 @@ Mirrored from `# TODO` / `# FIXME` in the repo. Update this table in the same ch
 |---|---|
 | `src/storage/registry.py` | A registry row whose stored file was deleted is still listed. |
 | `src/profiling/cache.py` | Postgres `sha256` is a connection fingerprint, not table contents; revisit invalidation in 2.11. |
+| `src/profiling/dq.py` | `_THOUSANDS` is US-style only (`1,234.56`); unverified against source data; European `1.234,56` is not flagged. |
 
 ---
 
@@ -592,7 +592,8 @@ Not current-step work and not code `# TODO`s. Revisit when the listed step runs.
 |---|---|
 | 2.11 | Sample-frame DQ can undercount full-file duplicates (and similar pair/rate checks) if the sample only catches one of a pair. Decide sample vs bounded/fuller read in `profile_source`. |
 | 2.11 | Postgres profile-cache invalidation is connection fingerprint only; table contents/schema can change without a miss. (Also a code TODO in `cache.py`.) |
-| 2.6 | `_type_mismatch_kind` uses early-return (numeric fully, then date fully, then mixed). Fine for two kinds; if 2.6 adds a third parser, fold them into an ordered loop so numeric-first precedence is explicit. |
+| later | `_type_mismatch_kind` still uses early-return. 2.6 did not add a third type-mismatch parser; flatten into an ordered loop if type and format parsers are ever merged. |
+| later | Thousands-separator locale: decide how to detect which numeric style a column uses (US vs EU, possibly mixed). Do not just add a second hardcoded regex next to `_THOUSANDS`. (Also a code TODO in `dq.py`.) |
 | later fixture | `detect_nulls` empty-frame test is 0 rows with columns present. An all-null column (rows exist; pandas may infer `float64`) is a different shape; cover it if a later DQ fixture already looks like that. |
 
 ---
@@ -611,6 +612,6 @@ Not current-step work and not code `# TODO`s. Revisit when the listed step runs.
 
 ## Current focus
 
-**2.5 done.** Next: **2.6 DQ: inconsistent formatting**.
-Do not start 2.6 until you say to proceed.
-`detect_type_mismatches(frame)` flags text columns as `numeric_as_string`, `date_as_string`, or `mixed`. Already-typed numerics/dates are left alone. Thousands separators and mixed date formats are 2.6.
+**2.6 done.** Next: **2.7 DQ: outliers**.
+Do not start 2.7 until you say to proceed.
+`detect_inconsistent_formatting(frame)` returns per-column lists of `mixed_date_formats`, `thousands_separators`, and/or `whitespace`. Uniform ISO dates are not mixed formats. Not a tool yet (2.11).
