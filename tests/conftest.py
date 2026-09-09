@@ -37,3 +37,9 @@ def sample_nulls_csv(fixtures_dir: Path) -> Path:
 def sample_duplicates_csv(fixtures_dir: Path) -> Path:
     """Path to the tiny CSV used for full-row duplicate DQ tests."""
     return fixtures_dir / "sample_duplicates.csv"
+
+
+@pytest.fixture
+def sample_type_mismatches_csv(fixtures_dir: Path) -> Path:
+    """Path to the tiny sales-shaped CSV used for type-mismatch DQ tests."""
+    return fixtures_dir / "sample_type_mismatches.csv"

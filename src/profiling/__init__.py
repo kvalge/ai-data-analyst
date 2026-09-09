@@ -6,8 +6,10 @@ from src.profiling.cache import read_profile_cache, write_profile_cache
 from src.profiling.dq import (
     DUPLICATES_RESULT_KEYS,
     NULLS_RESULT_KEYS,
+    TYPE_MISMATCHES_RESULT_KEYS,
     detect_duplicates,
     detect_nulls,
+    detect_type_mismatches,
 )
 from src.profiling.schema import SCHEMA_RESULT_KEYS, detect_schema
 
@@ -15,9 +17,11 @@ __all__ = [
     "DUPLICATES_RESULT_KEYS",
     "NULLS_RESULT_KEYS",
     "SCHEMA_RESULT_KEYS",
+    "TYPE_MISMATCHES_RESULT_KEYS",
     "detect_duplicates",
     "detect_nulls",
     "detect_schema",
+    "detect_type_mismatches",
     "read_profile_cache",
     "write_profile_cache",
 ]

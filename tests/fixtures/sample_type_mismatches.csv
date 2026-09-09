@@ -1,0 +1,5 @@
+date,region,revenue
+2024-01-01,North,120
+not-a-date,South,95
+2024-01-03,East,abc
+2024-01-04,West,80
