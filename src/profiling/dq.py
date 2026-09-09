@@ -12,6 +12,7 @@ import pandas as pd
 _LOG = logging.getLogger(__name__)
 
 NULLS_RESULT_KEYS = frozenset({"null_counts", "null_pcts", "row_count"})
+DUPLICATES_RESULT_KEYS = frozenset({"duplicate_row_count", "row_count"})
 
 
 def detect_nulls(frame: pd.DataFrame) -> dict[str, Any]:
@@ -35,5 +36,24 @@ def detect_nulls(frame: pd.DataFrame) -> dict[str, Any]:
     return {
         "null_counts": null_counts,
         "null_pcts": null_pcts,
+        "row_count": row_count,
+    }
+
+
+def detect_duplicates(frame: pd.DataFrame) -> dict[str, Any]:
+    """Return how many extra full-row copies `frame` contains.
+
+    v1 compares every column. `duplicate_row_count` is rows you would drop
+    with `drop_duplicates` (keep first). An empty frame reports 0.
+    """
+    row_count = int(len(frame))
+    duplicate_row_count = int(frame.duplicated(keep="first").sum())
+    _LOG.info(
+        "detect_duplicates row_count=%s duplicate_row_count=%s",
+        row_count,
+        duplicate_row_count,
+    )
+    return {
+        "duplicate_row_count": duplicate_row_count,
         "row_count": row_count,
     }

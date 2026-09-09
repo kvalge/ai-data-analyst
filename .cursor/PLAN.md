@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission. Code `# TODO` / `# FIXME` comments are also listed under **Open TODOs (code)** below.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** Next step: **2.4**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** Next step: **2.5**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -208,8 +208,9 @@ Profiling is functions + cache. Guided pauses here are **Streamlit Continue butt
 
 ### 2.4 DQ: duplicates
 
-- Duplicate row count; optional key-column later — v1 = full-row duplicates.
-- Test with a duplicated fixture.
+- [x] Duplicate row count; optional key-column later — v1 = full-row duplicates.
+- [x] Test with a duplicated fixture.
+- **Done when:** extra full-row copies are counted on a duplicated fixture.
 
 ### 2.5 DQ: type mismatches
 
@@ -245,6 +246,9 @@ Profiling is functions + cache. Guided pauses here are **Streamlit Continue butt
 
 - Orchestrate schema + DQ + EDA; write cache; return a compact summary (not the dataset).
 - Use sample or a bounded read; do not put the frame in logs.
+- Decide sample vs a bounded/fuller read for DQ: `detect_duplicates` (and similar
+  sample-frame checks) can undercount pairs the sample never contains. That is
+  sampling, not a bug in the DQ functions.
 - Tests: cached vs fresh.
 - Result-schema vs serialize-keys checks use `tests/tool_schema.py`
   (`assert_keys_match_required`), extracted when `read_file_sample` (1.13)
@@ -576,6 +580,18 @@ Mirrored from `# TODO` / `# FIXME` in the repo. Update this table in the same ch
 
 ---
 
+## Deferred notes (review)
+
+Not current-step work and not code `# TODO`s. Revisit when the listed step runs.
+
+| When | Note |
+|---|---|
+| 2.11 | Sample-frame DQ can undercount full-file duplicates (and similar pair/rate checks) if the sample only catches one of a pair. Decide sample vs bounded/fuller read in `profile_source`. |
+| 2.11 | Postgres profile-cache invalidation is connection fingerprint only; table contents/schema can change without a miss. (Also a code TODO in `cache.py`.) |
+| later fixture | `detect_nulls` empty-frame test is 0 rows with columns present. An all-null column (rows exist; pandas may infer `float64`) is a different shape; cover it if a later DQ fixture already looks like that. |
+
+---
+
 ## Out of scope until asked
 
 - Standalone MCP server
@@ -590,6 +606,6 @@ Mirrored from `# TODO` / `# FIXME` in the repo. Update this table in the same ch
 
 ## Current focus
 
-**2.3 done.** Next: **2.4 DQ: duplicates**.
-Do not start 2.4 until you say to proceed.
-`detect_nulls(frame)` returns per-column `null_counts` and `null_pcts` (0–100) plus `row_count` for the given sample frame. Not a tool yet (2.11).
+**2.4 done.** Next: **2.5 DQ: type mismatches**.
+Do not start 2.5 until you say to proceed.
+`detect_duplicates(frame)` returns `duplicate_row_count` (extras after keep-first) and `row_count` for full-row copies on the given sample frame. Not a tool yet (2.11).
