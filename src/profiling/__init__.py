@@ -15,6 +15,7 @@ from src.profiling.dq import (
     detect_outliers,
     detect_type_mismatches,
 )
+from src.profiling.eda import SUMMARY_STATS_RESULT_KEYS, summary_stats
 from src.profiling.schema import SCHEMA_RESULT_KEYS, detect_schema
 
 __all__ = [
@@ -23,6 +24,7 @@ __all__ = [
     "NULLS_RESULT_KEYS",
     "OUTLIERS_RESULT_KEYS",
     "SCHEMA_RESULT_KEYS",
+    "SUMMARY_STATS_RESULT_KEYS",
     "TYPE_MISMATCHES_RESULT_KEYS",
     "detect_duplicates",
     "detect_inconsistent_formatting",
@@ -31,5 +33,6 @@ __all__ = [
     "detect_schema",
     "detect_type_mismatches",
     "read_profile_cache",
+    "summary_stats",
     "write_profile_cache",
 ]
