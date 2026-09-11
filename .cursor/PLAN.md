@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission. Code `# TODO` / `# FIXME` comments are also listed under **Open TODOs (code)** below.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** Next step: **2.10**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** Next step: **2.11**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -245,8 +245,9 @@ Profiling is functions + cache. Guided pauses here are **Streamlit Continue butt
 
 ### 2.10 EDA: correlations
 
-- Numeric-only Pearson; skip if <2 numeric columns.
-- Tests.
+- [x] Numeric-only Pearson; skip if <2 numeric columns.
+- [x] Tests.
+- **Done when:** Pearson is computed for two-plus numeric columns and skipped otherwise.
 
 ### 2.11 `profile_source` tool
 
@@ -615,6 +616,6 @@ Not current-step work and not code `# TODO`s. Revisit when the listed step runs.
 
 ## Current focus
 
-**2.9 done.** Next: **2.10 EDA: correlations**.
-Do not start 2.10 until you say to proceed.
-`distributions(frame)` returns numeric `counts`/`edges` (10 bins) and categorical `top` (N=10) plus `other_count`. Compact JSON, no plots. Not a tool yet (2.11).
+**2.10 done.** Next: **2.11 `profile_source` tool**.
+Do not start 2.11 until you say to proceed.
+`correlations(frame)` returns a Pearson matrix for numeric columns (bool excluded). Fewer than two numeric columns → `skipped` True and `pearson` None. Pairwise NaN is JSON null. Not a tool yet.

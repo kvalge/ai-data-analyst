@@ -18,6 +18,7 @@ _LOG = logging.getLogger(__name__)
 
 SUMMARY_STATS_RESULT_KEYS = frozenset({"numeric", "categorical", "row_count"})
 DISTRIBUTIONS_RESULT_KEYS = frozenset({"numeric", "categorical", "row_count"})
+CORRELATIONS_RESULT_KEYS = frozenset({"columns", "pearson", "skipped", "row_count"})
 
 _HIST_BINS = 10
 _TOP_N = 10
@@ -82,6 +83,50 @@ def distributions(frame: pd.DataFrame) -> dict[str, Any]:
     }
 
 
+def correlations(frame: pd.DataFrame) -> dict[str, Any]:
+    """Return a Pearson matrix for numeric columns, or skip if fewer than two.
+
+    Bool is not numeric. `pearson` is None when skipped. Pairwise NaN
+    (constant column, no overlap) becomes JSON null. Results describe
+    only the rows in `frame` (sample or full).
+    """
+    row_count = int(len(frame))
+    numeric_items = [
+        (str(name), series)
+        for name, series in frame.items()
+        if _is_numeric_column(series)
+    ]
+    columns = [name for name, _ in numeric_items]
+    if len(columns) < 2:
+        _LOG.info(
+            "correlations skipped columns=%s row_count=%s",
+            columns,
+            row_count,
+        )
+        return {
+            "columns": columns,
+            "pearson": None,
+            "skipped": True,
+            "row_count": row_count,
+        }
+    subset = pd.DataFrame(dict(numeric_items))
+    corr = subset.corr(method="pearson")
+    pearson = {
+        str(row): {
+            str(column): _corr_cell(corr.loc[row, column])
+            for column in corr.columns
+        }
+        for row in corr.index
+    }
+    _LOG.info("correlations columns=%s row_count=%s", columns, row_count)
+    return {
+        "columns": columns,
+        "pearson": pearson,
+        "skipped": False,
+        "row_count": row_count,
+    }
+
+
 def _numeric_summary(series: pd.Series) -> dict[str, Any]:
     numeric = series.dropna().astype("float64")
     if numeric.empty:
@@ -131,6 +176,12 @@ def _json_cell(value: Any) -> Any:
     if isinstance(value, (int, float)):
         return value
     return str(value)
+
+
+def _corr_cell(value: Any) -> float | None:
+    if value is None or pd.isna(value):
+        return None
+    return float(value)
 
 
 def _is_numeric_column(series: pd.Series) -> bool:
