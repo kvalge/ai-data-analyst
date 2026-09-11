@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission. Code `# TODO` / `# FIXME` comments are also listed under **Open TODOs (code)** below.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** Next step: **2.9**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** Next step: **2.10**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -239,8 +239,9 @@ Profiling is functions + cache. Guided pauses here are **Streamlit Continue butt
 
 ### 2.9 EDA: distributions
 
-- Hist bins or value_counts top-N; store compact JSON, not plots yet.
-- Tests.
+- [x] Hist bins or value_counts top-N; store compact JSON, not plots yet.
+- [x] Tests.
+- **Done when:** numeric histograms and categorical top-N counts are JSON and tested.
 
 ### 2.10 EDA: correlations
 
@@ -614,6 +615,6 @@ Not current-step work and not code `# TODO`s. Revisit when the listed step runs.
 
 ## Current focus
 
-**2.8 done.** Next: **2.9 EDA: distributions**.
-Do not start 2.9 until you say to proceed.
-`summary_stats(frame)` returns `numeric` (count/mean/median/min/max) and `categorical` (`nunique`). Bool is categorical. Not a tool yet (2.11).
+**2.9 done.** Next: **2.10 EDA: correlations**.
+Do not start 2.10 until you say to proceed.
+`distributions(frame)` returns numeric `counts`/`edges` (10 bins) and categorical `top` (N=10) plus `other_count`. Compact JSON, no plots. Not a tool yet (2.11).

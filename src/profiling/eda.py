@@ -11,11 +11,16 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+import numpy as np
 import pandas as pd
 
 _LOG = logging.getLogger(__name__)
 
 SUMMARY_STATS_RESULT_KEYS = frozenset({"numeric", "categorical", "row_count"})
+DISTRIBUTIONS_RESULT_KEYS = frozenset({"numeric", "categorical", "row_count"})
+
+_HIST_BINS = 10
+_TOP_N = 10
 
 
 def summary_stats(frame: pd.DataFrame) -> dict[str, Any]:
@@ -47,6 +52,36 @@ def summary_stats(frame: pd.DataFrame) -> dict[str, Any]:
     }
 
 
+def distributions(frame: pd.DataFrame) -> dict[str, Any]:
+    """Return numeric histogram bins and categorical top-N value counts.
+
+    Bool is treated as categorical, not numeric. Empty numeric columns
+    report empty counts/edges. Categories beyond top-N are summed in
+    `other_count`. Results describe only the rows in `frame` (sample or
+    full). Compact JSON only; no plots.
+    """
+    row_count = int(len(frame))
+    numeric: dict[str, Any] = {}
+    categorical: dict[str, Any] = {}
+    for column, series in frame.items():
+        name = str(column)
+        if _is_numeric_column(series):
+            numeric[name] = _numeric_histogram(series)
+        else:
+            categorical[name] = _categorical_top(series)
+    _LOG.info(
+        "distributions row_count=%s numeric=%s categorical=%s",
+        row_count,
+        list(numeric),
+        list(categorical),
+    )
+    return {
+        "numeric": numeric,
+        "categorical": categorical,
+        "row_count": row_count,
+    }
+
+
 def _numeric_summary(series: pd.Series) -> dict[str, Any]:
     numeric = series.dropna().astype("float64")
     if numeric.empty:
@@ -64,6 +99,38 @@ def _numeric_summary(series: pd.Series) -> dict[str, Any]:
         "min": float(numeric.min()),
         "max": float(numeric.max()),
     }
+
+
+def _numeric_histogram(series: pd.Series) -> dict[str, Any]:
+    numeric = series.dropna().astype("float64")
+    if numeric.empty:
+        return {"counts": [], "edges": []}
+    hist_counts, hist_edges = np.histogram(numeric.to_numpy(), bins=_HIST_BINS)
+    return {
+        "counts": [int(count) for count in hist_counts],
+        "edges": [float(edge) for edge in hist_edges],
+    }
+
+
+def _categorical_top(series: pd.Series) -> dict[str, Any]:
+    counts = series.dropna().value_counts()
+    top = counts.head(_TOP_N)
+    other_count = int(counts.iloc[_TOP_N:].sum()) if len(counts) > _TOP_N else 0
+    return {
+        "top": [
+            {"value": _json_cell(value), "count": int(count)}
+            for value, count in top.items()
+        ],
+        "other_count": other_count,
+    }
+
+
+def _json_cell(value: Any) -> Any:
+    if isinstance(value, (bool, np.bool_)):
+        return bool(value)
+    if isinstance(value, (int, float)):
+        return value
+    return str(value)
 
 
 def _is_numeric_column(series: pd.Series) -> bool:
