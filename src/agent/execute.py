@@ -11,6 +11,7 @@ from typing import Any
 
 from src.agent.json_output import (
     STRICT_RETRY_INSTRUCTION,
+    JsonParseError,
     JsonSchemaError,
     strip_markdown_fences,
     validate_json_object,
@@ -57,8 +58,8 @@ def parse_tool_call(text: str) -> dict[str, Any] | None:
         return None
     try:
         payload = json.loads(stripped)
-    except json.JSONDecodeError:
-        return None
+    except json.JSONDecodeError as exc:
+        raise JsonParseError("Could not parse JSON.") from exc
     if not isinstance(payload, dict) or "name" not in payload:
         return None
     validate_json_object(payload, TOOL_CALL_SCHEMA)
@@ -100,7 +101,7 @@ def retry_prompt_after_validation(base_prompt: str, error: str) -> str:
         (
             base_prompt,
             STRICT_RETRY_INSTRUCTION,
-            f"Previous tool call failed validation: {error}",
+            f"Previous model output failed validation: {error}",
         )
     )
 

@@ -17,7 +17,11 @@ from src.agent.execute import (
     run_allowlisted_tool,
     validate_tool_call,
 )
-from src.agent.json_output import STRICT_RETRY_INSTRUCTION, JsonSchemaError
+from src.agent.json_output import (
+    STRICT_RETRY_INSTRUCTION,
+    JsonParseError,
+    JsonSchemaError,
+)
 from src.config import load_settings
 from src.storage.registry import save_file_source
 
@@ -51,6 +55,12 @@ def test_parse_plain_text_is_not_a_tool_call():
 def test_parse_json_without_name_is_not_a_tool_call():
     """A JSON object that is not a tool call stays a text reply."""
     assert parse_tool_call('{"content": "hello"}') is None
+
+
+def test_parse_malformed_object_is_parse_error():
+    """A broken object is a parse failure, not a guessed text reply."""
+    with pytest.raises(JsonParseError, match="Could not parse JSON"):
+        parse_tool_call("{not-json")
 
 
 def test_parse_tool_call_reads_name_and_arguments():

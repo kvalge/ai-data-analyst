@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission. Code `# TODO` / `# FIXME` comments are also listed under **Open TODOs (code)** below.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** Next step: **3.12**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** **3.12 done.** Next step: **3.13**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -372,8 +372,9 @@ No sandbox code execution yet. Tools: `list_available_sources`, `read_file_sampl
 
 ### 3.12 Visible failure after retry
 
-- After one strict retry, surface the error in chat; do not invent a tool call.
-- Test.
+- [x] After one strict retry, surface the error in chat; do not invent a tool call.
+- [x] Test.
+- A `{` that is not valid JSON is a parse error (retry once), not an assistant message. Valid JSON that is not a tool object is still a text reply. `pending_tool` stays unset.
 
 ### 3.13 Audit log (minimal)
 
@@ -641,7 +642,6 @@ Not current-step work and not code `# TODO`s. Revisit when the listed step runs.
 
 ## Current focus
 
-**3.11 done.** Next: **3.12 Visible failure after retry**.
-Do not start 3.12 until you say to proceed.
-`START → confirm_sources → detect_schema → run_dq → run_eda → agent ⇄ execute_tool`.
-Guided pauses after schema, DQ, and EDA (continue / skip remaining / abort). Standard and Auto run through.
+**3.12 done.** Next: **3.13 Audit log (minimal)**.
+Do not start 3.13 until you say to proceed.
+After one strict retry, parse/tool-validation failures are a visible chat error. No invented tool call or assistant guess.

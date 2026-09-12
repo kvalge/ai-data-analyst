@@ -170,7 +170,7 @@ def _invoke_or_error(
     try:
         return graph.invoke(payload, config)
     except Exception as exc:
-        # Retry on malformed LLM output is 3.12. Here we only fail visibly.
+        # Parse retries live in the graph. Escape leftover invoke crashes here.
         _LOG.info("UI chat invoke failed")
         message = str(exc).strip() or "Chat failed."
         return {"error": message, "messages": graph_messages(graph, thread_id)}

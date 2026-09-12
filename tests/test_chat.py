@@ -60,6 +60,19 @@ def graph(settings: Settings):
     return build_graph(settings=settings, complete_fn=fake_complete)
 
 
+class _BoomGraph:
+    """Graph stub: empty checkpoint; invoke always raises."""
+
+    def get_state(self, config: object) -> object:
+        class Snap:
+            values = {"messages": [], "error": None}
+
+        return Snap()
+
+    def invoke(self, payload: object, config: object) -> dict[str, Any]:
+        raise ConnectionError("connection refused")
+
+
 def test_first_turn_appends_user_and_assistant(graph):
     """The UI helper sends user text and stores the model reply."""
     result = invoke_user_turn(
@@ -138,6 +151,23 @@ def test_second_turn_keeps_history(graph):
     assert contents == ["one", "plain reply", "two", "plain reply"]
 
 
+def test_malformed_json_after_retry_is_visible_in_chat(settings: Settings):
+    """After one parse retry the error is in chat, not an invented assistant turn."""
+
+    def fake_complete(prompt: str, **kwargs: Any) -> str:
+        return "{not-json"
+
+    graph = build_graph(settings=settings, complete_fn=fake_complete)
+    invoke_user_turn(
+        graph,
+        user_text="hello",
+        hitl_mode=HITL_MODE_STANDARD,
+        thread_id="chat-retry",
+    )
+    assert graph_error(graph, "chat-retry") == "Could not parse JSON."
+    assert [m["role"] for m in graph_messages(graph, "chat-retry")] == ["user"]
+
+
 def test_graph_error_is_readable(settings: Settings):
     """A failed turn leaves a visible error and no assistant guess."""
 
@@ -157,19 +187,8 @@ def test_graph_error_is_readable(settings: Settings):
 
 def test_invoke_exception_becomes_visible_error():
     """A crashing invoke is a chat error, not an uncaught traceback."""
-
-    class BoomGraph:
-        def get_state(self, config: object) -> object:
-            class Snap:
-                values = {"messages": [], "error": None}
-
-            return Snap()
-
-        def invoke(self, payload: object, config: object) -> dict[str, Any]:
-            raise ConnectionError("connection refused")
-
     result = invoke_user_turn(
-        BoomGraph(),
+        _BoomGraph(),
         user_text="hello",
         hitl_mode=HITL_MODE_STANDARD,
         thread_id="chat-6",
@@ -180,18 +199,7 @@ def test_invoke_exception_becomes_visible_error():
 
 def test_escaped_invoke_error_is_shown_when_checkpoint_is_empty():
     """render_chat must use the invoke dict; the checkpoint has nothing to re-read."""
-
-    class BoomGraph:
-        def get_state(self, config: object) -> object:
-            class Snap:
-                values = {"messages": [], "error": None}
-
-            return Snap()
-
-        def invoke(self, payload: object, config: object) -> dict[str, Any]:
-            raise ConnectionError("connection refused")
-
-    graph = BoomGraph()
+    graph = _BoomGraph()
     result = invoke_user_turn(
         graph,
         user_text="hello",

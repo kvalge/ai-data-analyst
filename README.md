@@ -22,7 +22,9 @@ sandbox are not bound yet.
 - **Chat** with the local primary model (it may call list / sample / profile /
   load_full_file). Chat pauses to confirm the source when none are registered,
   several are present with none selected, or the sample/schema is empty. In
-  **Guided** mode it also pauses after schema, data quality, and EDA.
+  **Guided** mode it also pauses after schema, data quality, and EDA. A
+  malformed tool JSON or unknown tool is retried once, then shown as an
+  error; the app does not invent a tool call.
 
 ## What is not here yet
 

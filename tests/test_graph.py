@@ -256,3 +256,23 @@ def test_bad_args_retry_then_fail(settings: Settings):
     assert result["error"] == "Missing keys: source_id"
     assert result["last_tool_result"] is None
     assert [m["role"] for m in result["messages"]] == ["user"]
+
+
+def test_malformed_json_retries_then_fails_without_a_guessed_call(
+    settings: Settings,
+):
+    """Broken tool JSON retries once, then fails. No invented tool or reply."""
+    prompts: list[str] = []
+
+    def fake_complete(prompt: str, **kwargs: Any) -> str:
+        prompts.append(prompt)
+        return "{not-json"
+
+    graph = build_graph(settings=settings, complete_fn=fake_complete)
+    result = graph.invoke(_user_turn("list sources"), _THREAD)
+    assert len(prompts) == 2
+    assert STRICT_RETRY_INSTRUCTION in prompts[1]
+    assert result["error"] == "Could not parse JSON."
+    assert result["pending_tool"] is None
+    assert result["last_tool_result"] is None
+    assert [m["role"] for m in result["messages"]] == ["user"]
