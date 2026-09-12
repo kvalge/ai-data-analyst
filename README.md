@@ -1,11 +1,41 @@
 <!-- README.md -->
 
-# AI Data Analyst Application
+# AI Data Analyst
 
-Typecheck: `pyright` (from the repo root; checks `src/` only).
-Tests: `pytest`.
+A private, local alternative to prompt-to-analysis tools. You upload data or
+point at a read-only Postgres database, inspect it, and ask questions in chat.
+All LLM inference runs on your machine through **Ollama**. Sensitive rows are
+not sent to hosted APIs, and Ollama `:cloud` models are rejected.
 
-## Run
+The app is a Streamlit shell around a LangGraph agent. Chat is live; data tools
+are not bound to the agent yet. Profiling is a sidebar action, not something
+the model can call on its own.
+
+## What you can do now
+
+- Upload CSV / Excel / JSON, or attach a configured Postgres source
+- Upload domain-context files (markdown / text / PDF) — stored separately,
+  never treated as datasets
+- **Preview** a file: column types and a short sample (`SAMPLE_N_ROWS`)
+- **Profile** a file: bounded-head schema, data-quality, and EDA (cached;
+  not a whole-file profile; the dataset is not shown)
+- **Chat** with the local primary model (plain-text replies)
+
+## What is not here yet
+
+Chat cannot list, sample, profile, query, or run analysis code. Generated
+SQL/Python and the sandbox come later. Context files are stored only; there
+is no RAG retrieval yet.
+
+## Requirements
+
+- Python 3.11+
+- A local [Ollama](https://ollama.com) instance with four models named in `.env`
+  (see `.env.example`; do not put real model tags in that file)
+- Optional: Postgres with a **read-only** role (granted in the database, not
+  by this app)
+
+## Setup
 
 From the repository root:
 
@@ -16,28 +46,33 @@ pip install -r requirements.txt
 copy .env.example .env
 ```
 
-Set the four `OLLAMA_MODEL_*` names in `.env` (placeholders in `.env.example`). Then:
+Set the four `OLLAMA_MODEL_*` names (and optional `DB_*`) in `.env`.
+
+## Run
 
 ```powershell
 streamlit run src/ui/app.py
 ```
 
-Use the sidebar to choose a HITL mode (Guided / Standard / Auto; default
-Standard), upload a data file (CSV / Excel / JSON), and optionally a
-domain-context file (markdown / text / PDF). Context files are stored separately
-and are not treated as datasets. Use the main-area **Chat** to send a question
-to the local Ollama model (plain-text replies; data tools are not bound yet).
-Use **Preview** on a data source to see column types and a short
-sample (`SAMPLE_N_ROWS`); the full file is never loaded into the UI. Use
-**Profile selected source** for a bounded-head schema / data-quality / EDA
-summary (not a whole-file profile; the dataset is not shown). In **Guided**
-mode the profile pauses after schema, then data quality, then EDA
-(Continue / Skip remaining / Abort). Standard and Auto show all sections
-at once. Preview and profile can both stay open; close either from its
-panel.
+**Sidebar:** HITL mode (Guided / Standard / Auto; default Standard), uploads,
+source list, optional Postgres test. **Main:** preview and profile panels
+(they can stay open together; close either from its heading), then chat.
 
-Optional Postgres: set `DB_NAME` and `DB_USER` in `.env` (and host/port/password
-as needed). The database **role must be read-only** — grant that in Postgres;
-the app only checks that a connection works. Use **Test connection** in the
-sidebar. Check **Use configured database** to list it as a data source (no
-password form; credentials stay in `.env`).
+In **Guided** mode, profile pauses after schema, then data quality, then EDA
+(Continue / Skip remaining / Abort). Standard and Auto show all sections at
+once.
+
+Optional Postgres: set `DB_NAME` and `DB_USER` in `.env`. Use **Test
+connection**, then **Use configured database** to list it as a source.
+Credentials stay in `.env`; there is no password form.
+
+## Develop
+
+From the repo root:
+
+```powershell
+.\venv\Scripts\python.exe -m pytest
+.\venv\Scripts\pyright.exe
+```
+
+Typecheck covers `src/` only. Tests stay flat under `tests/`.
