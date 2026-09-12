@@ -3,6 +3,7 @@
 """Tests that every registered Phase 3 tool has a contract and handler."""
 
 from collections.abc import Mapping
+from typing import Any, cast
 
 import pytest
 
@@ -77,5 +78,6 @@ def test_registered_handlers_are_the_tool_functions(
 
 def test_exported_registry_rejects_item_assignment():
     """TOOL_REGISTRY cannot be patched in place for the life of the process."""
+    writable = cast(Any, TOOL_REGISTRY)
     with pytest.raises(TypeError):
-        TOOL_REGISTRY["profile_source"] = TOOL_REGISTRY["list_available_sources"]
+        writable["profile_source"] = TOOL_REGISTRY["list_available_sources"]
