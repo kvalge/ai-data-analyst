@@ -6,6 +6,7 @@ import pytest
 
 from src.agent.json_output import (
     FAIL,
+    FIRST_PARSE_FAILURE,
     RETRY_STRICT,
     STRICT_RETRY_INSTRUCTION,
     JsonParseError,
@@ -105,7 +106,7 @@ def test_schema_miss_non_object():
 
 def test_retry_once_after_first_failure():
     """The first parse failure may retry with a stricter instruction."""
-    assert decide_after_parse_failure(1) == RETRY_STRICT
+    assert decide_after_parse_failure(FIRST_PARSE_FAILURE) == RETRY_STRICT
 
 
 def test_strict_retry_instruction_forbids_fences():

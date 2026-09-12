@@ -14,6 +14,7 @@ _LOG = logging.getLogger(__name__)
 
 RETRY_STRICT = "retry_strict"
 FAIL = "fail"
+FIRST_PARSE_FAILURE = 1
 STRICT_RETRY_INSTRUCTION = (
     "Reply with a single JSON object only. No markdown fences, no commentary."
 )
@@ -78,8 +79,8 @@ def validate_json_object(payload: object, schema: Mapping[str, Any]) -> None:
 
 def decide_after_parse_failure(failure_count: int) -> str:
     """After the first failure, retry once with a stricter instruction. Then fail."""
-    if failure_count < 1:
+    if failure_count < FIRST_PARSE_FAILURE:
         raise ValueError("failure_count must be at least 1.")
-    if failure_count == 1:
+    if failure_count == FIRST_PARSE_FAILURE:
         return RETRY_STRICT
     return FAIL

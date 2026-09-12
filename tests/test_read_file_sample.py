@@ -137,6 +137,8 @@ def test_read_file_sample_contract_is_complete():
     assert contract.name == "read_file_sample"
     assert contract.description
     assert contract.input_schema["type"] == "object"
+    assert contract.input_schema["required"] == ["source_id"]
+    assert "path" not in contract.input_schema["properties"]
     assert contract.result_schema["required"] == [
         "columns",
         "dtypes",

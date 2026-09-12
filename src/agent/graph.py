@@ -11,8 +11,18 @@ from typing import Any, Protocol
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
 
-from src.agent.execute import parse_tool_call, run_allowlisted_tool
-from src.agent.json_output import JsonOutputError
+from src.agent.execute import (
+    ToolValidationError,
+    interpret_model_reply,
+    retry_prompt_after_validation,
+    run_allowlisted_tool,
+)
+from src.agent.json_output import (
+    FIRST_PARSE_FAILURE,
+    RETRY_STRICT,
+    JsonOutputError,
+    decide_after_parse_failure,
+)
 from src.agent.llm import LlmError, complete
 from src.agent.prompts import build_system_prompt
 from src.agent.state import AgentState
@@ -77,6 +87,12 @@ def build_graph(
     """Compile START → agent ⇄ execute_tool → END. Checkpointer is MemorySaver."""
     completer = complete_fn or complete
 
+    def _llm_reply(prompt: str) -> str:
+        reply = completer(prompt, settings=settings, structured=True)
+        if not isinstance(reply, str) or not reply.strip():
+            raise LlmError("Ollama response was missing.")
+        return reply
+
     def agent_node(state: AgentState) -> dict[str, Any]:
         if not any(
             message.get("role") == "user" and message.get("content", "").strip()
@@ -85,16 +101,24 @@ def build_graph(
             return {"error": "No user message to reply to."}
         prompt = build_prompt(state)
         try:
-            reply = completer(prompt, settings=settings, structured=True)
+            reply = _llm_reply(prompt)
+            call = interpret_model_reply(reply)
         except LlmError as exc:
             _LOG.info("graph agent llm error")
             return {"error": str(exc), "pending_tool": None}
-        if not isinstance(reply, str) or not reply.strip():
-            return {"error": "Ollama response was missing.", "pending_tool": None}
-        try:
-            call = parse_tool_call(reply)
-        except JsonOutputError as exc:
-            return {"error": str(exc), "pending_tool": None}
+        except (JsonOutputError, ToolValidationError) as exc:
+            if decide_after_parse_failure(FIRST_PARSE_FAILURE) != RETRY_STRICT:
+                return {"error": str(exc), "pending_tool": None}
+            _LOG.info("graph tool validation retry")
+            try:
+                reply = _llm_reply(retry_prompt_after_validation(prompt, str(exc)))
+                call = interpret_model_reply(reply)
+            except LlmError as retry_exc:
+                _LOG.info("graph agent llm error")
+                return {"error": str(retry_exc), "pending_tool": None}
+            except (JsonOutputError, ToolValidationError) as retry_exc:
+                _LOG.info("graph tool validation failed after retry")
+                return {"error": str(retry_exc), "pending_tool": None}
         if call is None:
             _LOG.info("graph agent replied")
             return {
@@ -102,10 +126,7 @@ def build_graph(
                 "pending_tool": None,
                 "error": None,
             }
-        name = call["name"]
-        if name not in TOOL_REGISTRY:
-            return {"error": f"Unknown tool: {name}.", "pending_tool": None}
-        _LOG.info("graph agent requested tool=%s", name)
+        _LOG.info("graph agent requested tool=%s", call["name"])
         return {"pending_tool": call, "error": None}
 
     def execute_tool_node(state: AgentState) -> dict[str, Any]:

@@ -10,6 +10,7 @@ from typing import Any
 import pytest
 
 from src.agent.graph import build_graph
+from src.agent.json_output import STRICT_RETRY_INSTRUCTION
 from src.agent.llm import LlmError
 from src.agent.prompts import build_system_prompt
 from src.agent.state import HITL_MODE_STANDARD, AgentState, empty_agent_state
@@ -185,11 +186,72 @@ def test_failed_tool_is_visible_without_a_second_llm_call(settings: Settings):
     def fake_complete(prompt: str, **kwargs: Any) -> str:
         nonlocal calls
         calls += 1
-        return '{"name": "read_file_sample", "arguments": {}}'
+        return (
+            '{"name": "read_file_sample",'
+            ' "arguments": {"source_id": "file-missing"}}'
+        )
 
     graph = build_graph(settings=settings, complete_fn=fake_complete)
     result = graph.invoke(_user_turn("show a sample"), _THREAD)
     assert calls == 1
-    assert result["error"] == "Provide exactly one of source_id or path."
+    assert result["error"] == "Unknown source_id: file-missing"
+    assert result["last_tool_result"] is None
+    assert [m["role"] for m in result["messages"]] == ["user"]
+
+
+def test_unknown_tool_retries_then_fails(settings: Settings):
+    """An unknown tool name retries once, then fails without executing."""
+    prompts: list[str] = []
+
+    def fake_complete(prompt: str, **kwargs: Any) -> str:
+        prompts.append(prompt)
+        return '{"name": "not_a_tool", "arguments": {}}'
+
+    graph = build_graph(settings=settings, complete_fn=fake_complete)
+    result = graph.invoke(_user_turn("list sources"), _THREAD)
+    assert len(prompts) == 2
+    assert STRICT_RETRY_INSTRUCTION in prompts[1]
+    assert "Unknown tool: not_a_tool." in prompts[1]
+    assert result["error"] == "Unknown tool: not_a_tool."
+    assert result["last_tool_result"] is None
+    assert result["pending_tool"] is None
+    assert [m["role"] for m in result["messages"]] == ["user"]
+
+
+def test_unknown_tool_retries_then_runs(
+    settings: Settings, tmp_path, sample_sales_csv: Path
+):
+    """A valid tool JSON on the strict retry is executed, not guessed."""
+    from src.storage.registry import save_file_source
+
+    incoming = tmp_path / "sales.csv"
+    incoming.write_bytes(sample_sales_csv.read_bytes())
+    saved = save_file_source(
+        incoming, settings.upload_dir, original_name="sales.csv"
+    )
+    replies = [
+        '{"name": "not_a_tool", "arguments": {}}',
+        '{"name": "list_available_sources", "arguments": {}}',
+        "There is 1 source.",
+    ]
+
+    def fake_complete(prompt: str, **kwargs: Any) -> str:
+        return replies.pop(0)
+
+    graph = build_graph(settings=settings, complete_fn=fake_complete)
+    result = graph.invoke(_user_turn("what sources do I have?"), _THREAD)
+    assert result["error"] is None
+    assert result["last_tool_result"]["sources"][0]["source_id"] == saved.source_id
+    assert result["messages"][-1]["content"] == "There is 1 source."
+
+
+def test_bad_args_retry_then_fail(settings: Settings):
+    """Missing required arguments retry once, then fail without a guessed id."""
+    def fake_complete(prompt: str, **kwargs: Any) -> str:
+        return '{"name": "read_file_sample", "arguments": {}}'
+
+    graph = build_graph(settings=settings, complete_fn=fake_complete)
+    result = graph.invoke(_user_turn("show a sample"), _THREAD)
+    assert result["error"] == "Missing keys: source_id"
     assert result["last_tool_result"] is None
     assert [m["role"] for m in result["messages"]] == ["user"]

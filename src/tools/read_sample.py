@@ -22,20 +22,19 @@ READ_FILE_SAMPLE = ToolContract(
     name="read_file_sample",
     description=(
         "Peek at an analysis data file: column names, dtypes, and a short "
-        "head of rows. Provide exactly one of source_id or path. Never "
-        "returns the full file."
+        "head of rows. Provide source_id. Never returns the full file."
     ),
     input_schema={
         "type": "object",
         "properties": {
             "source_id": {"type": "string"},
-            "path": {"type": "string"},
             "n_rows": {
                 "type": "integer",
                 "minimum": 1,
                 "default": DEFAULT_SAMPLE_N_ROWS,
             },
         },
+        "required": ["source_id"],
         "additionalProperties": False,
     },
     result_schema={
@@ -66,6 +65,7 @@ def read_file_sample(
     """Return dtypes, columns, and at most `n_rows` records. Never the full file.
 
     `upload_dir` and `max_bytes` are injected by the app, not the LLM.
+    The agent must pass `source_id`. `path` is for tests and direct callers.
     """
     if n_rows < 1:
         raise FileValidationError("n_rows must be at least 1.")

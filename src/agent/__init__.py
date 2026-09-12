@@ -4,6 +4,7 @@
 
 from src.agent.json_output import (
     FAIL,
+    FIRST_PARSE_FAILURE,
     RETRY_STRICT,
     STRICT_RETRY_INSTRUCTION,
     JsonOutputError,
@@ -13,7 +14,14 @@ from src.agent.json_output import (
     parse_json_output,
     strip_markdown_fences,
 )
-from src.agent.execute import parse_tool_call, run_allowlisted_tool
+from src.agent.execute import (
+    ToolValidationError,
+    interpret_model_reply,
+    parse_tool_call,
+    retry_prompt_after_validation,
+    run_allowlisted_tool,
+    validate_tool_call,
+)
 from src.agent.graph import CompleteFn, build_graph, build_prompt
 from src.agent.llm import (
     ROLE_AGENTIC,
@@ -38,6 +46,7 @@ from src.agent.state import (
 
 __all__ = [
     "FAIL",
+    "FIRST_PARSE_FAILURE",
     "RETRY_STRICT",
     "STRICT_RETRY_INSTRUCTION",
     "JsonOutputError",
@@ -65,6 +74,10 @@ __all__ = [
     "CompleteFn",
     "build_graph",
     "build_prompt",
+    "ToolValidationError",
+    "interpret_model_reply",
     "parse_tool_call",
+    "retry_prompt_after_validation",
     "run_allowlisted_tool",
+    "validate_tool_call",
 ]
