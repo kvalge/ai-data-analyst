@@ -4,8 +4,9 @@
 
 from __future__ import annotations
 
+import operator
 from pathlib import Path
-from typing import Any, TypedDict
+from typing import Annotated, Any, TypedDict
 
 # Match src/ui/hitl.py HitlMode values. Agent code must not import the UI.
 HITL_MODE_GUIDED = "Guided"
@@ -26,7 +27,7 @@ class AgentMessage(TypedDict):
 class AgentState(TypedDict):
     """Working graph state. Checkpoints may persist this; keep it JSON-safe."""
 
-    messages: list[AgentMessage]
+    messages: Annotated[list[AgentMessage], operator.add]
     hitl_mode: str
     source_ids: list[str]
     profile_summary: dict[str, Any] | None

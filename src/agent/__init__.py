@@ -1,6 +1,6 @@
 # __init__.py
 
-"""Agent orchestration: parse helpers, local Ollama client, state, and prompts."""
+"""Agent orchestration: parse helpers, Ollama client, state, prompts, and graph."""
 
 from src.agent.json_output import (
     FAIL,
@@ -13,6 +13,7 @@ from src.agent.json_output import (
     parse_json_output,
     strip_markdown_fences,
 )
+from src.agent.graph import CompleteFn, build_graph, build_prompt
 from src.agent.llm import (
     ROLE_AGENTIC,
     ROLE_CODING,
@@ -60,4 +61,7 @@ __all__ = [
     "as_artifact_path",
     "empty_agent_state",
     "build_system_prompt",
+    "CompleteFn",
+    "build_graph",
+    "build_prompt",
 ]
