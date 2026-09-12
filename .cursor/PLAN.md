@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission. Code `# TODO` / `# FIXME` comments are also listed under **Open TODOs (code)** below.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** **3.12 done.** **3.13 done.** **4.1 done.** **4.2 done.** **4.3 done.** **4.4 done.** Next step: **4.5**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** **3.12 done.** **3.13 done.** **4.1 done.** **4.2 done.** **4.3 done.** **4.4 done.** **4.5 done.** Next step: **4.6**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -414,8 +414,9 @@ No sandbox code execution yet. Tools: `list_available_sources`, `read_file_sampl
 
 ### 4.5 `query_database` tool
 
-- Parameterized read-only query; run only after SQL checks.
-- Mock cursor tests; skip real DB in default pytest.
+- [x] Parameterized read-only query; run only after SQL checks.
+- [x] Mock cursor tests; skip real DB in default pytest.
+- Public args: `connection_id` (must match `postgres_source_id`), `sql`, optional `params`. `check_sql` runs before connect. Requires the sidebar-enabled configured DB (`include_postgres`). Result is a bounded head (`SAMPLE_N_ROWS`) plus `truncated`. Password and SQL text are not logged or returned. Driver failures log `type(exc).__name__` only (no traceback); psycopg messages often embed SQL and params. HITL before SQL is 4.8 (this step runs the query once checks pass). Default pytest never opens a real socket. `run_allowlisted_tool` may inject `connect` (test seam); LLM `connect`/`settings` are stripped. Audit records `connection_id` as `source_id`, not SQL.
 
 ### 4.6 `run_analysis_code` tool
 
@@ -648,6 +649,6 @@ Not current-step work and not code `# TODO`s. Revisit when the listed step runs.
 
 ## Current focus
 
-**4.4 done.** Next: **4.5 `query_database` tool**.
-Do not start 4.5 until you say to proceed.
-Generated SQL is checked for empty/multi-statement/write-DDL. The checker is not bound to a query tool or chat yet.
+**4.5 done.** Next: **4.6 `run_analysis_code` tool**.
+Do not start 4.6 until you say to proceed.
+`query_database` runs one checked, parameterized SELECT/WITH against the enabled Postgres source and returns a bounded head. No live DB in default pytest.

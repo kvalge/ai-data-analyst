@@ -8,8 +8,9 @@ All LLM inference runs on your machine through **Ollama**. Sensitive rows are
 not sent to hosted APIs, and Ollama `:cloud` models are rejected.
 
 The app is a Streamlit shell around a LangGraph agent. Chat can ask the model
-to list, sample, profile, or load a file. Query, generated code, and the
-sandbox are not bound yet.
+to list, sample, profile, load a file, or run a checked read-only SQL query
+against the enabled Postgres source. Generated Python and the sandbox are
+not bound yet.
 
 ## What you can do now
 
@@ -20,7 +21,7 @@ sandbox are not bound yet.
 - **Profile** a file: bounded-head schema, data-quality, and EDA (cached;
   not a whole-file profile; the dataset is not shown)
 - **Chat** with the local primary model (it may call list / sample / profile /
-  load_full_file). Chat pauses to confirm the source when none are registered,
+  load_full_file, or query_database). Chat pauses to confirm the source when none are registered,
   several are present with none selected, or the sample/schema is empty. In
   **Guided** mode it also pauses after schema, data quality, and EDA. A
   malformed tool JSON or unknown tool is retried once, then shown as an
@@ -30,8 +31,9 @@ sandbox are not bound yet.
 
 ## What is not here yet
 
-Chat cannot query Postgres or run generated SQL/Python. The sandbox and RAG
-retrieval come later. Context files are stored only.
+Chat cannot run generated Python. SQL approval interrupts and the sandbox
+come later. Context files are stored only. Postgres queries are one
+checked SELECT/WITH with bound parameters and a bounded row cap.
 
 ## Requirements
 

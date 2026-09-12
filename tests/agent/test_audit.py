@@ -154,3 +154,4 @@ def test_source_id_for_audit_does_not_invent_an_id():
     assert source_id_for_audit({}) is None
     assert source_id_for_audit({"source_id": "   "}) is None
     assert source_id_for_audit({"source_id": "file-a"}) == "file-a"
+    assert source_id_for_audit({"connection_id": "postgres-a"}) == "postgres-a"

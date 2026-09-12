@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import json
 import logging
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from typing import Any
 
 from src.agent.audit import (
@@ -35,6 +35,7 @@ _APP_ARG_KEYS = frozenset(
         "max_bytes",
         "max_full_load_rows",
         "include_postgres",
+        "connect",
     }
 )
 
@@ -117,11 +118,19 @@ def run_allowlisted_tool(
     settings: Settings,
     *,
     include_postgres: bool = False,
+    connect: Callable[..., Any] | None = None,
 ) -> dict[str, Any]:
-    """Look up `name` on the registry, inject app args, and run the handler."""
+    """Look up `name` on the registry, inject app args, and run the handler.
+
+    `connect` is a test seam for query_database. The LLM cannot supply it.
+    """
     checked = validate_tool_call(name, arguments)
     kwargs = _injected_kwargs(
-        checked["name"], settings, checked["arguments"], include_postgres
+        checked["name"],
+        settings,
+        checked["arguments"],
+        include_postgres,
+        connect=connect,
     )
     _LOG.info("execute tool=%s", checked["name"])
     result = TOOL_REGISTRY[checked["name"]].handler(**kwargs)
@@ -176,6 +185,8 @@ def _injected_kwargs(
     settings: Settings,
     args: dict[str, Any],
     include_postgres: bool,
+    *,
+    connect: Callable[..., Any] | None = None,
 ) -> dict[str, Any]:
     """Build handler kwargs. Limits and paths always come from settings."""
     if name == "list_available_sources":
@@ -210,5 +221,15 @@ def _injected_kwargs(
             "max_full_load_rows": settings.max_full_load_rows,
             "max_bytes": settings.max_upload_bytes,
             "settings": settings,
+        }
+    if name == "query_database":
+        return {
+            "settings": settings,
+            "include_postgres": include_postgres,
+            "sql": args["sql"],
+            "connection_id": args["connection_id"],
+            "params": args.get("params") or [],
+            "n_rows": settings.sample_n_rows,
+            "connect": connect,
         }
     raise ValueError(f"Unknown tool: {name}.")

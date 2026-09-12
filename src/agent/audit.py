@@ -27,10 +27,11 @@ def audit_log_path(log_dir: Path) -> Path:
 
 
 def source_id_for_audit(arguments: dict[str, Any]) -> str | None:
-    """Return a source_id string when the tool named one. Do not invent an id."""
-    value = arguments.get("source_id")
-    if isinstance(value, str) and value.strip():
-        return value
+    """Return a source or connection id when the tool named one. Do not invent."""
+    for key in ("source_id", "connection_id"):
+        value = arguments.get(key)
+        if isinstance(value, str) and value.strip():
+            return value
     return None
 
 

@@ -10,6 +10,7 @@ import pytest
 from src.tools.list_sources import LIST_AVAILABLE_SOURCES, list_available_sources
 from src.tools.load_full_file import LOAD_FULL_FILE, load_full_file
 from src.tools.profile_source import PROFILE_SOURCE, profile_source
+from src.tools.query_database import QUERY_DATABASE, query_database
 from src.tools.read_sample import READ_FILE_SAMPLE, read_file_sample
 from src.tools.registry import TOOL_REGISTRY, RegisteredTool, build_tool_registry
 
@@ -18,6 +19,7 @@ _EXPECTED_HANDLERS = {
     READ_FILE_SAMPLE.name: read_file_sample,
     PROFILE_SOURCE.name: profile_source,
     LOAD_FULL_FILE.name: load_full_file,
+    QUERY_DATABASE.name: query_database,
 }
 
 
@@ -28,7 +30,7 @@ def tool_registry() -> Mapping[str, RegisteredTool]:
 
 
 def test_phase_3_tool_names_are_registered(tool_registry: Mapping[str, RegisteredTool]):
-    """The Phase 3 allowlist is list, sample, profile, and load_full_file."""
+    """The allowlist is list, sample, profile, load_full_file, and query_database."""
     assert set(tool_registry) == set(_EXPECTED_HANDLERS)
 
 
