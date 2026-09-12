@@ -1,6 +1,6 @@
 # __init__.py
 
-"""Profiling functions (schema, later DQ/EDA). Not tools until 2.11."""
+"""Profiling functions (schema, DQ, EDA). Orchestrated by profile_source."""
 
 from src.profiling.cache import read_profile_cache, write_profile_cache
 from src.profiling.dq import (
