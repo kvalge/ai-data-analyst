@@ -10,7 +10,17 @@ from typing import Any, Protocol
 
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
+from langgraph.types import interrupt
 
+from src.agent.confirm_sources import (
+    ACTION_SELECT,
+    REASON_EMPTY_SCHEMA,
+    apply_confirm_decision,
+    build_interrupt_payload,
+    decide_confirm_reason,
+    file_sample_emptiness,
+    list_confirm_sources,
+)
 from src.agent.execute import (
     ToolValidationError,
     interpret_model_reply,
@@ -78,14 +88,73 @@ def route_after_execute(state: AgentState) -> str:
     return "agent"
 
 
+def route_after_confirm(state: AgentState) -> str:
+    """After abort or a confirm error, end. Otherwise continue to the agent."""
+    if state.get("error"):
+        return END
+    return "agent"
+
+
 def build_graph(
     *,
     settings: Settings,
     complete_fn: CompleteFn | None = None,
     include_postgres: bool = False,
 ) -> Any:
-    """Compile START → agent ⇄ execute_tool → END. Checkpointer is MemorySaver."""
+    """Compile START → confirm_sources → agent ⇄ execute_tool → END."""
     completer = complete_fn or complete
+
+    def confirm_sources_node(state: AgentState) -> dict[str, Any]:
+        sources = list_confirm_sources(
+            settings, include_postgres=include_postgres
+        )
+        incoming = [
+            item for item in (state.get("source_ids") or []) if isinstance(item, str)
+        ]
+        cleared = [
+            item
+            for item in (state.get("cleared_empty_source_ids") or [])
+            if isinstance(item, str)
+        ]
+        reason, selected = decide_confirm_reason(sources, incoming)
+        extra: dict[str, int] = {}
+        if reason is None and selected:
+            empty = file_sample_emptiness(selected[0], sources, settings)
+            if empty is not None and selected[0] not in cleared:
+                reason = REASON_EMPTY_SCHEMA
+                extra = empty
+        if reason is None:
+            _LOG.info("graph confirm_sources ok")
+            return {
+                "source_ids": selected,
+                "pending_interrupt": None,
+                "error": None,
+            }
+        payload = build_interrupt_payload(
+            reason, sources, selected, **extra
+        )
+        _LOG.info("graph confirm_sources interrupt reason=%s", reason)
+        decision = interrupt(payload)
+        updates = apply_confirm_decision(
+            decision, sources, selected, cleared_empty_source_ids=cleared
+        )
+        if updates.get("error"):
+            return updates
+        if isinstance(decision, dict) and decision.get("action") == ACTION_SELECT:
+            chosen = updates.get("source_ids") or []
+            if chosen:
+                empty = file_sample_emptiness(chosen[0], sources, settings)
+                if empty is not None and chosen[0] not in cleared:
+                    second = build_interrupt_payload(
+                        REASON_EMPTY_SCHEMA, sources, chosen, **empty
+                    )
+                    return apply_confirm_decision(
+                        interrupt(second),
+                        sources,
+                        chosen,
+                        cleared_empty_source_ids=cleared,
+                    )
+        return updates
 
     def _llm_reply(prompt: str) -> str:
         reply = completer(prompt, settings=settings, structured=True)
@@ -159,9 +228,15 @@ def build_graph(
         return updates
 
     graph = StateGraph(AgentState)
+    graph.add_node("confirm_sources", confirm_sources_node)
     graph.add_node("agent", agent_node)
     graph.add_node("execute_tool", execute_tool_node)
-    graph.add_edge(START, "agent")
+    graph.add_edge(START, "confirm_sources")
+    graph.add_conditional_edges(
+        "confirm_sources",
+        route_after_confirm,
+        {"agent": "agent", END: END},
+    )
     graph.add_conditional_edges(
         "agent",
         route_after_agent,

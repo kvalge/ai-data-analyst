@@ -14,6 +14,15 @@ from src.agent.json_output import (
     parse_json_output,
     strip_markdown_fences,
 )
+from src.agent.confirm_sources import (
+    ACTION_ABORT,
+    ACTION_CONFIRM,
+    ACTION_SELECT,
+    KIND_CONFIRM_SOURCES,
+    apply_confirm_decision,
+    build_interrupt_payload,
+    decide_confirm_reason,
+)
 from src.agent.execute import (
     ToolValidationError,
     interpret_model_reply,
@@ -72,6 +81,13 @@ __all__ = [
     "empty_agent_state",
     "build_system_prompt",
     "CompleteFn",
+    "ACTION_ABORT",
+    "ACTION_CONFIRM",
+    "ACTION_SELECT",
+    "KIND_CONFIRM_SOURCES",
+    "apply_confirm_decision",
+    "build_interrupt_payload",
+    "decide_confirm_reason",
     "build_graph",
     "build_prompt",
     "ToolValidationError",

@@ -15,6 +15,7 @@ from src.agent.llm import LlmError
 from src.agent.prompts import build_system_prompt
 from src.agent.state import HITL_MODE_STANDARD, AgentState, empty_agent_state
 from src.config import Settings, load_settings
+from src.storage.registry import save_file_source
 
 _PLACEHOLDER_MODELS = {
     "OLLAMA_MODEL_PRIMARY": "placeholder-primary:tag",
@@ -28,13 +29,17 @@ _GRAPH_PATH = Path(__file__).resolve().parents[1] / "src" / "agent" / "graph.py"
 
 
 @pytest.fixture
-def settings(tmp_path) -> Settings:
-    """Frozen settings with placeholder model names."""
-    return load_settings(
+def settings(tmp_path, sample_sales_csv: Path) -> Settings:
+    """Frozen settings with one registered sales file so confirm_sources can pass."""
+    loaded = load_settings(
         environ={"OLLAMA_HOST": "http://ollama.test:11434", **_PLACEHOLDER_MODELS},
         load_dotenv_file=False,
         project_root=tmp_path,
     )
+    incoming = tmp_path / "sales.csv"
+    incoming.write_bytes(sample_sales_csv.read_bytes())
+    save_file_source(incoming, loaded.upload_dir, original_name="sales.csv")
+    return loaded
 
 
 def _user_turn(text: str) -> AgentState:
@@ -147,8 +152,6 @@ def test_list_available_sources_runs_then_replies(
     settings: Settings, tmp_path, sample_sales_csv: Path
 ):
     """A mocked tool JSON runs list_available_sources, then a text reply."""
-    from src.storage.registry import save_file_source
-
     upload_dir = settings.upload_dir
     incoming = tmp_path / "sales.csv"
     incoming.write_bytes(sample_sales_csv.read_bytes())
@@ -222,8 +225,6 @@ def test_unknown_tool_retries_then_runs(
     settings: Settings, tmp_path, sample_sales_csv: Path
 ):
     """A valid tool JSON on the strict retry is executed, not guessed."""
-    from src.storage.registry import save_file_source
-
     incoming = tmp_path / "sales.csv"
     incoming.write_bytes(sample_sales_csv.read_bytes())
     saved = save_file_source(

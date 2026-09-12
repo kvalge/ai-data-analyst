@@ -22,6 +22,7 @@ def test_empty_state_has_plan_keys():
         "messages",
         "hitl_mode",
         "source_ids",
+        "cleared_empty_source_ids",
         "profile_summary",
         "pending_interrupt",
         "pending_tool",
@@ -57,6 +58,11 @@ def test_empty_state_source_ids_start_empty():
     assert empty_agent_state()["source_ids"] == []
 
 
+def test_empty_state_cleared_empty_ids_start_empty():
+    """No source is treated as empty-schema-acked until the user confirms."""
+    assert empty_agent_state()["cleared_empty_source_ids"] == []
+
+
 def test_empty_state_optional_payloads_are_none():
     """Profile, interrupt, tool result, and error start unset."""
     state = empty_agent_state()
@@ -78,8 +84,10 @@ def test_empty_state_lists_are_not_shared():
     second = empty_agent_state()
     first["messages"].append({"role": "user", "content": "hi"})
     first["artifacts"].append("C:/tmp/chart.png")
+    first["cleared_empty_source_ids"].append("file-abc")
     assert second["messages"] == []
     assert second["artifacts"] == []
+    assert second["cleared_empty_source_ids"] == []
 
 
 def test_agent_state_annotations_omit_dataframe():

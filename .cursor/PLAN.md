@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission. Code `# TODO` / `# FIXME` comments are also listed under **Open TODOs (code)** below.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** Next step: **3.10**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** Next step: **3.11**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -317,7 +317,7 @@ No sandbox code execution yet. Tools: `list_available_sources`, `read_file_sampl
 
 ### 3.4 Agent state
 
-- [x] `src/agent/state.py` TypedDict: `messages`, `hitl_mode`, `source_ids`, `profile_summary`, `pending_interrupt`, `pending_tool`, `last_tool_result`, `artifacts` (paths only), `error`.
+- [x] `src/agent/state.py` TypedDict: `messages`, `hitl_mode`, `source_ids`, `cleared_empty_source_ids`, `profile_summary`, `pending_interrupt`, `pending_tool`, `last_tool_result`, `artifacts` (paths only), `error`.
 - [x] No dataframes in state.
 - HITL mode strings match the UI labels; `empty_agent_state` does not import Streamlit.
 
@@ -357,9 +357,11 @@ No sandbox code execution yet. Tools: `list_available_sources`, `read_file_sampl
 
 ### 3.10 `confirm_sources` interrupt
 
-- Interrupt if 0 sources, >1 source with none selected, or sample/schema empty.
-- Streamlit: confirm / select / abort; resume graph.
-- Mocked test for interrupt payload.
+- [x] Interrupt if 0 sources, >1 source with none selected, or sample/schema empty.
+- [x] Streamlit: confirm / select / abort; resume graph.
+- [x] Mocked test for interrupt payload.
+- Payload is identities only (no rows). Sidebar `source_ids` count as a selection. Abort does not call the LLM.
+- Empty-schema is always checked when a file is selected. Confirm records the id on `cleared_empty_source_ids` so later turns on that thread do not re-prompt.
 
 ### 3.11 Move Guided profiling into the graph
 
@@ -638,6 +640,6 @@ Not current-step work and not code `# TODO`s. Revisit when the listed step runs.
 
 ## Current focus
 
-**3.9 done.** Next: **3.10 `confirm_sources` interrupt**.
-Do not start 3.10 until you say to proceed.
-Unknown tool or schema-invalid args retry once with the 3.2 strict instruction, then fail visibly. No guessed tool call.
+**3.10 done.** Next: **3.11 Move Guided profiling into the graph**.
+Do not start 3.11 until you say to proceed.
+`START → confirm_sources → agent`. Interrupt reasons: `no_sources`, `multiple_sources`, `empty_schema`.

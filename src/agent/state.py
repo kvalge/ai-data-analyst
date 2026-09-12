@@ -30,6 +30,7 @@ class AgentState(TypedDict):
     messages: Annotated[list[AgentMessage], operator.add]
     hitl_mode: str
     source_ids: list[str]
+    cleared_empty_source_ids: list[str]
     profile_summary: dict[str, Any] | None
     pending_interrupt: dict[str, Any] | None
     pending_tool: dict[str, Any] | None
@@ -46,6 +47,7 @@ def empty_agent_state(*, hitl_mode: str = HITL_MODE_STANDARD) -> AgentState:
         "messages": [],
         "hitl_mode": hitl_mode,
         "source_ids": [],
+        "cleared_empty_source_ids": [],
         "profile_summary": None,
         "pending_interrupt": None,
         "pending_tool": None,

@@ -13,9 +13,12 @@ from src.agent.graph import build_graph
 from src.agent.llm import LlmError
 from src.agent.state import HITL_MODE_STANDARD
 from src.config import Settings, load_settings
+from src.storage.registry import save_file_source
+from src.agent.confirm_sources import REASON_NO_SOURCES
 from src.ui.chat import (
     ensure_thread_id,
     graph_error,
+    graph_interrupt_payload,
     graph_messages,
     invoke_user_turn,
     store_invoke_result,
@@ -34,13 +37,17 @@ _APP_PATH = Path(__file__).resolve().parents[1] / "src" / "ui" / "app.py"
 
 
 @pytest.fixture
-def settings(tmp_path) -> Settings:
-    """Frozen settings with placeholder model names."""
-    return load_settings(
+def settings(tmp_path, sample_sales_csv: Path) -> Settings:
+    """Frozen settings with one registered sales file so confirm_sources can pass."""
+    loaded = load_settings(
         environ={"OLLAMA_HOST": "http://ollama.test:11434", **_PLACEHOLDER_MODELS},
         load_dotenv_file=False,
         project_root=tmp_path,
     )
+    incoming = tmp_path / "sales.csv"
+    incoming.write_bytes(sample_sales_csv.read_bytes())
+    save_file_source(incoming, loaded.upload_dir, original_name="sales.csv")
+    return loaded
 
 
 @pytest.fixture
@@ -77,6 +84,29 @@ def test_transcript_omits_system_prompt(graph):
     roles = [m["role"] for m in graph_messages(graph, "chat-2")]
     assert "system" not in roles
     assert roles == ["user", "assistant"]
+
+
+def test_chat_turn_without_sources_pauses(tmp_path):
+    """invoke_user_turn surfaces the confirm_sources interrupt, not a guess."""
+    empty = load_settings(
+        environ={"OLLAMA_HOST": "http://ollama.test:11434", **_PLACEHOLDER_MODELS},
+        load_dotenv_file=False,
+        project_root=tmp_path,
+    )
+
+    def fake_complete(prompt: str, **kwargs: Any) -> str:
+        return "should not run"
+
+    graph = build_graph(settings=empty, complete_fn=fake_complete)
+    invoke_user_turn(
+        graph,
+        user_text="hello",
+        hitl_mode=HITL_MODE_STANDARD,
+        thread_id="chat-none",
+    )
+    payload = graph_interrupt_payload(graph, "chat-none")
+    assert payload is not None
+    assert payload["reason"] == REASON_NO_SOURCES
 
 
 def test_blank_chat_text_is_rejected(graph):

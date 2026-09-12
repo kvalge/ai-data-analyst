@@ -20,7 +20,8 @@ sandbox are not bound yet.
 - **Profile** a file: bounded-head schema, data-quality, and EDA (cached;
   not a whole-file profile; the dataset is not shown)
 - **Chat** with the local primary model (it may call list / sample / profile /
-  load_full_file)
+  load_full_file). Chat pauses to confirm the source when none are registered,
+  several are present with none selected, or the sample/schema is empty.
 
 ## What is not here yet
 

@@ -264,4 +264,8 @@ if not profile_id and not preview_id:
 
 st.subheader("Chat")
 st.caption("Local Ollama only. The model may call list, sample, profile, or load.")
-render_chat(settings)
+selected = st.session_state.get(SELECTED_SOURCE_ID_KEY)
+render_chat(
+    settings,
+    source_ids=[selected] if isinstance(selected, str) and selected else None,
+)

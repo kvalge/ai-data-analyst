@@ -9,11 +9,14 @@ import uuid
 from typing import Any
 
 import streamlit as st
+from langgraph.types import Command
 
+from src.agent.confirm_sources import KIND_CONFIRM_SOURCES
 from src.agent.graph import build_graph
 from src.agent.state import AgentMessage, empty_agent_state
 from src.config import Settings
 from src.ui.hitl import HITL_MODE_KEY, resolve_hitl_mode
+from src.ui.source_confirm import render_source_confirm
 
 _LOG = logging.getLogger(__name__)
 
@@ -84,17 +87,46 @@ def visible_chat_error(
     return None
 
 
+def graph_interrupt_payload(graph: Any, thread_id: str) -> dict[str, Any] | None:
+    """Return the confirm_sources interrupt value, if the graph is paused."""
+    snap = graph.get_state(thread_config(thread_id))
+    interrupts = getattr(snap, "interrupts", ()) or ()
+    if not interrupts:
+        return None
+    value = getattr(interrupts[0], "value", None)
+    if isinstance(value, dict) and value.get("kind") == KIND_CONFIRM_SOURCES:
+        return value
+    return None
+
+
+def resume_confirm_sources(
+    graph: Any,
+    *,
+    decision: dict[str, Any],
+    thread_id: str,
+) -> dict[str, Any]:
+    """Resume a confirm_sources interrupt with the user's decision."""
+    return _invoke_or_error(
+        graph,
+        Command(resume=decision),
+        thread_config(thread_id),
+        thread_id,
+    )
+
+
 def invoke_user_turn(
     graph: Any,
     *,
     user_text: str,
     hitl_mode: str,
     thread_id: str,
+    source_ids: list[str] | None = None,
 ) -> dict[str, Any]:
     """Send one user line into the graph. Does not attach a system prompt."""
     text = user_text.strip()
     if not text:
         raise ValueError("Chat text is empty.")
+    chosen = [item for item in (source_ids or []) if item]
     config = thread_config(thread_id)
     _LOG.info("UI chat turn")
     if graph_messages(graph, thread_id):
@@ -103,12 +135,14 @@ def invoke_user_turn(
             {
                 "messages": [{"role": "user", "content": text}],
                 "hitl_mode": hitl_mode,
+                "source_ids": chosen,
             },
             config,
             thread_id,
         )
     state = empty_agent_state(hitl_mode=hitl_mode)
     state["messages"] = [{"role": "user", "content": text}]
+    state["source_ids"] = chosen
     return _invoke_or_error(graph, state, config, thread_id)
 
 
@@ -128,7 +162,9 @@ def _invoke_or_error(
         return {"error": message, "messages": graph_messages(graph, thread_id)}
 
 
-def render_chat(settings: Settings) -> None:
+def render_chat(
+    settings: Settings, *, source_ids: list[str] | None = None
+) -> None:
     """Show the transcript and send typed text into the graph."""
     graph = ensure_graph(st.session_state, settings)
     thread_id = ensure_thread_id(st.session_state)
@@ -141,6 +177,17 @@ def render_chat(settings: Settings) -> None:
     error = visible_chat_error(graph_error(graph, thread_id), st.session_state)
     if error:
         st.error(error)
+    pending = graph_interrupt_payload(graph, thread_id)
+    if pending is not None:
+        decision = render_source_confirm(pending)
+        if decision is not None:
+            result = resume_confirm_sources(
+                graph, decision=decision, thread_id=thread_id
+            )
+            store_invoke_result(st.session_state, result)
+            st.rerun()
+        st.caption("Confirm, select, or abort the data source before chatting.")
+        return
     if not settings.ollama_model_primary:
         st.caption("Set OLLAMA_MODEL_* in .env to enable chat.")
     typed = st.chat_input("Ask about your data")
@@ -157,6 +204,7 @@ def render_chat(settings: Settings) -> None:
                 user_text=typed,
                 hitl_mode=str(mode),
                 thread_id=thread_id,
+                source_ids=source_ids,
             )
     except Exception as exc:
         st.session_state[CHAT_ERROR_KEY] = str(exc).strip() or "Chat failed."
