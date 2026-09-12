@@ -11,10 +11,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 from src.config import load_settings
-from src.storage.registry import save_file_source
+from src.storage.registry import registry_path, save_file_source
 from src.storage.sources import make_postgres_source
 from src.tools.load_full_file import LOAD_FULL_FILE, load_full_file
 from src.tools.profile_source import ProfileError
@@ -24,12 +25,38 @@ from tests.tool_schema import assert_keys_match_required
 _BIG_BYTES = 50 * 1024 * 1024
 
 
+_SALES_RECORDS = [
+    {"date": "2024-01-01", "region": "North", "revenue": 120},
+    {"date": "2024-01-02", "region": "South", "revenue": 95},
+    {"date": "2024-01-03", "region": "North", "revenue": 130},
+    {"date": "2024-01-04", "region": "East", "revenue": 80},
+    {"date": "2024-01-05", "region": "West", "revenue": 150},
+]
+
+
 def _register_sales(tmp_path: Path, sample_sales_csv: Path):
     upload_dir = tmp_path / "uploads"
     incoming = tmp_path / "sales.csv"
     incoming.write_bytes(sample_sales_csv.read_bytes())
     saved = save_file_source(incoming, upload_dir, original_name="sales.csv")
     return upload_dir, saved
+
+
+def _register_sales_json(tmp_path: Path):
+    upload_dir = tmp_path / "uploads"
+    incoming = tmp_path / "sales.json"
+    incoming.write_text(json.dumps(_SALES_RECORDS), encoding="utf-8")
+    saved = save_file_source(incoming, upload_dir, original_name="sales.json")
+    return upload_dir, saved
+
+
+def _alias_registry_source(upload_dir: Path, alias_id: str) -> None:
+    """Point a second source_id at the same stored_name in this upload_dir."""
+    path = registry_path(upload_dir)
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    original = payload["sources"][0]
+    payload["sources"].append({**original, "source_id": alias_id})
+    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 
 def test_load_full_file_under_limits(tmp_path: Path, sample_sales_csv: Path):
@@ -76,21 +103,7 @@ def test_load_full_file_over_row_limit(
 
 def test_load_full_file_over_row_limit_after_load(tmp_path: Path):
     """JSON has no cheap row count, so over-cap is row_count_post_load."""
-    upload_dir = tmp_path / "uploads"
-    incoming = tmp_path / "sales.json"
-    incoming.write_text(
-        json.dumps(
-            [
-                {"date": "2024-01-01", "region": "North", "revenue": 120},
-                {"date": "2024-01-02", "region": "South", "revenue": 95},
-                {"date": "2024-01-03", "region": "North", "revenue": 130},
-                {"date": "2024-01-04", "region": "East", "revenue": 80},
-                {"date": "2024-01-05", "region": "West", "revenue": 150},
-            ]
-        ),
-        encoding="utf-8",
-    )
-    saved = save_file_source(incoming, upload_dir, original_name="sales.json")
+    upload_dir, saved = _register_sales_json(tmp_path)
     result = load_full_file(
         upload_dir=upload_dir,
         source_id=saved.source_id,
@@ -103,6 +116,99 @@ def test_load_full_file_over_row_limit_after_load(tmp_path: Path):
     assert result["columns"] == []
     assert "rows" not in result
     assert_keys_match_required(result, LOAD_FULL_FILE.result_schema)
+
+
+def test_post_load_over_limit_reuses_memo_on_approve(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """An approved re-run uses the first pandas read, not a second disk load."""
+    upload_dir, saved = _register_sales_json(tmp_path)
+    first = load_full_file(
+        upload_dir=upload_dir,
+        source_id=saved.source_id,
+        max_full_load_rows=3,
+        max_bytes=_BIG_BYTES,
+    )
+    assert first["status"] == "needs_approval"
+
+    def boom(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("should not pandas-load again after the memo")
+
+    monkeypatch.setattr("pandas.read_json", boom)
+    again = load_full_file(
+        upload_dir=upload_dir,
+        source_id=saved.source_id,
+        max_full_load_rows=3,
+        max_bytes=_BIG_BYTES,
+    )
+    assert again["status"] == "needs_approval"
+    approved = load_full_file(
+        upload_dir=upload_dir,
+        source_id=saved.source_id,
+        max_full_load_rows=3,
+        max_bytes=_BIG_BYTES,
+        allow_over_limit=True,
+    )
+    assert approved["status"] == "loaded"
+    assert approved["row_count"] == 5
+    assert approved["columns"] == ["date", "region", "revenue"]
+    assert "rows" not in approved
+
+
+def test_load_memo_does_not_cross_source_ids(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """A memo for one source_id is not reused for another id on the same file."""
+    upload_dir, saved = _register_sales_json(tmp_path)
+    alias_id = "file-alias-other-source"
+    _alias_registry_source(upload_dir, alias_id)
+    first = load_full_file(
+        upload_dir=upload_dir,
+        source_id=saved.source_id,
+        max_full_load_rows=3,
+        max_bytes=_BIG_BYTES,
+    )
+    assert first["status"] == "needs_approval"
+
+    reads = {"n": 0}
+    real_read = pd.read_json
+
+    def counted(*args: object, **kwargs: object):
+        reads["n"] += 1
+        return real_read(*args, **kwargs)
+
+    monkeypatch.setattr("pandas.read_json", counted)
+    second = load_full_file(
+        upload_dir=upload_dir,
+        source_id=alias_id,
+        max_full_load_rows=3,
+        max_bytes=_BIG_BYTES,
+    )
+    assert second["status"] == "needs_approval"
+    assert reads["n"] == 1
+
+
+def test_load_memo_misses_when_file_changes(tmp_path: Path):
+    """A new fingerprint is not served from the previous memo."""
+    upload_dir, saved = _register_sales_json(tmp_path)
+    load_full_file(
+        upload_dir=upload_dir,
+        source_id=saved.source_id,
+        max_full_load_rows=3,
+        max_bytes=_BIG_BYTES,
+    )
+    assert saved.stored_path is not None
+    saved.stored_path.write_text(
+        json.dumps(_SALES_RECORDS[:2]), encoding="utf-8"
+    )
+    result = load_full_file(
+        upload_dir=upload_dir,
+        source_id=saved.source_id,
+        max_full_load_rows=3,
+        max_bytes=_BIG_BYTES,
+    )
+    assert result["status"] == "loaded"
+    assert result["row_count"] == 2
 
 
 def test_load_full_file_over_byte_limit(
@@ -125,6 +231,24 @@ def test_load_full_file_over_byte_limit(
     assert "size_bytes" in result["reason"]
     assert result["size_bytes"] > 1
     assert result["columns"] == []
+
+
+def test_load_full_file_allow_over_limit_loads(
+    tmp_path: Path, sample_sales_csv: Path
+):
+    """An approved over-limit run loads metadata instead of needs_approval."""
+    upload_dir, saved = _register_sales(tmp_path, sample_sales_csv)
+    result = load_full_file(
+        upload_dir=upload_dir,
+        source_id=saved.source_id,
+        max_full_load_rows=3,
+        max_bytes=_BIG_BYTES,
+        allow_over_limit=True,
+    )
+    assert result["status"] == "loaded"
+    assert result["row_count"] == 5
+    assert result["columns"] == ["date", "region", "revenue"]
+    assert "rows" not in result
 
 
 def test_load_full_file_unknown_source_id(tmp_path: Path):

@@ -2,14 +2,15 @@
 
 """Tool: load a registered file only when it is under row and byte limits.
 
-Over the limit this returns needs_approval (UI confirm in Phase 2; graph
-interrupt in 4.x). It does not put row records in the result — large
-tables must not land in the LLM context. Postgres is not a file load.
+Over the limit this returns needs_approval (graph interrupt in 4.10).
+It does not put row records in the result — large tables must not land
+in the LLM context. Postgres is not a file load.
 """
 
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -29,12 +30,25 @@ REASON_SIZE_BYTES = "size_bytes"
 REASON_ROW_COUNT = "row_count"
 REASON_ROW_COUNT_POST_LOAD = "row_count_post_load"
 
+
+@dataclass(frozen=True)
+class _LoadMemo:
+    """Row count and column names from one pandas read. Not the frame."""
+
+    fingerprint: tuple[str, int, int]
+    row_count: int
+    columns: tuple[str, ...]
+
+
+_LOAD_MEMO: dict[tuple[str, str], _LoadMemo] = {}
+
 LOAD_FULL_FILE = ToolContract(
     name="load_full_file",
     description=(
         "Load a registered data file when it is under MAX_FULL_LOAD_ROWS "
         "and the byte limit. Over the limit, return needs_approval without "
-        "loading. Never returns row records. Postgres is not supported."
+        "loading unless the graph injects an approved over-limit run. "
+        "Never returns row records. Postgres is not supported."
     ),
     input_schema={
         "type": "object",
@@ -78,11 +92,13 @@ def load_full_file(
     max_full_load_rows: int,
     max_bytes: int,
     settings: Settings | None = None,
+    allow_over_limit: bool = False,
 ) -> dict[str, Any]:
     """Load a file under limits, or return needs_approval without loading.
 
-    `upload_dir`, limits, and `settings` are injected by the app, not the
-    LLM. Success metadata has columns and row_count, never the dataset.
+    `upload_dir`, limits, `settings`, and `allow_over_limit` are injected
+    by the app, not the LLM. Success metadata has columns and row_count,
+    never the dataset.
     `reason` is `row_count` when the cheap CSV count already exceeded the
     cap (no pandas load), `row_count_post_load` when pandas had to load
     first (xlsx/json), `size_bytes` when the file is too large, or a
@@ -105,7 +121,7 @@ def load_full_file(
         reasons.append(REASON_SIZE_BYTES)
     if estimated_rows is not None and estimated_rows > max_full_load_rows:
         reasons.append(REASON_ROW_COUNT)
-    if reasons:
+    if reasons and not allow_over_limit:
         _LOG.info(
             "load_full_file needs_approval source_id=%s reasons=%s "
             "row_count=%s size_bytes=%s",
@@ -125,7 +141,19 @@ def load_full_file(
             columns=[],
         )
 
-    validate_data_file(path, max_bytes=max_bytes)
+    memo = _recall_load(source.source_id, path)
+    if memo is not None:
+        return _result_from_memo(
+            source_id=source.source_id,
+            memo=memo,
+            size_bytes=size_bytes,
+            max_full_load_rows=max_full_load_rows,
+            max_bytes=max_bytes,
+            allow_over_limit=allow_over_limit,
+        )
+
+    check_bytes = max(max_bytes, size_bytes) if allow_over_limit else max_bytes
+    validate_data_file(path, max_bytes=check_bytes)
     _LOG.info(
         "load_full_file load source_id=%s size_bytes=%s path=%s",
         source.source_id,
@@ -134,7 +162,9 @@ def load_full_file(
     )
     frame = _read_full_frame(path)
     row_count = int(len(frame))
-    if row_count > max_full_load_rows:
+    columns = [str(column) for column in frame.columns]
+    _remember_load(source.source_id, path, row_count, columns)
+    if row_count > max_full_load_rows and not allow_over_limit:
         _LOG.info(
             "load_full_file needs_approval source_id=%s reasons=%s "
             "row_count=%s size_bytes=%s",
@@ -161,7 +191,7 @@ def load_full_file(
         max_full_load_rows=max_full_load_rows,
         max_bytes=max_bytes,
         reason="",
-        columns=[str(column) for column in frame.columns],
+        columns=columns,
     )
 
 
@@ -186,6 +216,82 @@ def _result(
         "reason": reason,
         "columns": columns,
     }
+
+
+def _memo_key(source_id: str, path: Path) -> tuple[str, str]:
+    """Scope one pandas-read memo to a source_id and its resolved path."""
+    return (source_id, str(path.resolve()))
+
+
+def _fingerprint(path: Path) -> tuple[str, int, int]:
+    """Staleness check for a memo: resolved path, size, and mtime."""
+    resolved = path.resolve()
+    stat = resolved.stat()
+    return (str(resolved), int(stat.st_size), int(stat.st_mtime_ns))
+
+
+def _remember_load(
+    source_id: str, path: Path, row_count: int, columns: list[str]
+) -> None:
+    """Keep metadata from one pandas read. Never the frame or row values."""
+    _LOAD_MEMO[_memo_key(source_id, path)] = _LoadMemo(
+        fingerprint=_fingerprint(path),
+        row_count=row_count,
+        columns=tuple(columns),
+    )
+
+
+def _recall_load(source_id: str, path: Path) -> _LoadMemo | None:
+    """Return a memo when this source_id's file has not changed."""
+    key = _memo_key(source_id, path)
+    memo = _LOAD_MEMO.get(key)
+    if memo is None:
+        return None
+    if memo.fingerprint != _fingerprint(path):
+        _LOAD_MEMO.pop(key, None)
+        return None
+    return memo
+
+
+def _result_from_memo(
+    *,
+    source_id: str,
+    memo: _LoadMemo,
+    size_bytes: int,
+    max_full_load_rows: int,
+    max_bytes: int,
+    allow_over_limit: bool,
+) -> dict[str, Any]:
+    """Reuse a prior read. Do not pandas-load again."""
+    if memo.row_count > max_full_load_rows and not allow_over_limit:
+        _LOG.info(
+            "load_full_file needs_approval source_id=%s reasons=%s "
+            "row_count=%s size_bytes=%s memo=1",
+            source_id,
+            [REASON_ROW_COUNT_POST_LOAD],
+            memo.row_count,
+            size_bytes,
+        )
+        return _result(
+            status=STATUS_NEEDS_APPROVAL,
+            source_id=source_id,
+            row_count=memo.row_count,
+            size_bytes=size_bytes,
+            max_full_load_rows=max_full_load_rows,
+            max_bytes=max_bytes,
+            reason=REASON_ROW_COUNT_POST_LOAD,
+            columns=[],
+        )
+    return _result(
+        status=STATUS_LOADED,
+        source_id=source_id,
+        row_count=memo.row_count,
+        size_bytes=size_bytes,
+        max_full_load_rows=max_full_load_rows,
+        max_bytes=max_bytes,
+        reason="",
+        columns=list(memo.columns),
+    )
 
 
 def _read_full_frame(path: Path) -> pd.DataFrame:

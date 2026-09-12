@@ -46,6 +46,12 @@ from src.agent.codegen import (
     CodegenError,
     generate_checked_code,
 )
+from src.agent.load_approval import (
+    KIND_APPROVE_LOAD,
+    apply_load_decision,
+    build_load_interrupt,
+    is_over_limit_load,
+)
 from src.agent.execute import (
     ToolValidationError,
     interpret_model_reply,
@@ -110,6 +116,7 @@ __all__ = [
     "ACTION_SELECT",
     "ACTION_SKIP_REMAINING",
     "KIND_APPROVE_CODE",
+    "KIND_APPROVE_LOAD",
     "KIND_CONFIRM_SOURCES",
     "KIND_PROFILE_STEP",
     "ACTION_APPROVE",
@@ -117,8 +124,11 @@ __all__ = [
     "ACTION_REJECT",
     "apply_code_decision",
     "apply_confirm_decision",
+    "apply_load_decision",
     "apply_profile_decision",
     "build_code_interrupt",
+    "build_load_interrupt",
+    "is_over_limit_load",
     "should_pause_generated_code",
     "build_interrupt_payload",
     "build_profile_interrupt",

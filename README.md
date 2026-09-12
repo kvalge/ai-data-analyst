@@ -28,7 +28,8 @@ Auto runs it without asking; the tool-use audit line is still written.
   Standard and Guided also pause before `run_analysis_code` or
   `query_database` (Approve or Reject; an editable textarea comes later).
   **Auto** runs that generated SQL or Python without pausing; the audit
-  line is still written. A
+  line is still written. Every mode pauses before an over-limit
+  `load_full_file` (Approve loads anyway; Reject does not). A
   malformed tool JSON or unknown tool is retried once, then shown as an
   error; the app does not invent a tool call. Successful tool use appends
   one JSONL line under `data/logs/audit.jsonl` (tool, source_id, timestamp;
@@ -36,7 +37,8 @@ Auto runs it without asking; the tool-use audit line is still written.
 
 ## What is not here yet
 
-The editable code textarea comes later. Chat still has the primary
+The editable code textarea comes later. Over-limit full-file loads
+already pause in the graph. Chat still has the primary
 model write SQL/Python tool arguments; a plan→coding-model helper
 validates generated code but is not in the graph yet. Context files
 are stored only. Postgres queries are one checked SELECT/WITH.

@@ -36,6 +36,7 @@ _APP_ARG_KEYS = frozenset(
         "max_full_load_rows",
         "include_postgres",
         "connect",
+        "allow_over_limit",
     }
 )
 
@@ -119,10 +120,12 @@ def run_allowlisted_tool(
     *,
     include_postgres: bool = False,
     connect: Callable[..., Any] | None = None,
+    allow_over_limit: bool = False,
 ) -> dict[str, Any]:
     """Look up `name` on the registry, inject app args, and run the handler.
 
-    `connect` is a test seam for query_database. The LLM cannot supply it.
+    `connect` is a test seam for query_database. `allow_over_limit` is
+    injected after a full-file load approval. The LLM cannot supply either.
     """
     checked = validate_tool_call(name, arguments)
     kwargs = _injected_kwargs(
@@ -131,6 +134,7 @@ def run_allowlisted_tool(
         checked["arguments"],
         include_postgres,
         connect=connect,
+        allow_over_limit=allow_over_limit,
     )
     _LOG.info("execute tool=%s", checked["name"])
     result = TOOL_REGISTRY[checked["name"]].handler(**kwargs)
@@ -187,6 +191,7 @@ def _injected_kwargs(
     include_postgres: bool,
     *,
     connect: Callable[..., Any] | None = None,
+    allow_over_limit: bool = False,
 ) -> dict[str, Any]:
     """Build handler kwargs. Limits and paths always come from settings."""
     if name == "list_available_sources":
@@ -221,6 +226,7 @@ def _injected_kwargs(
             "max_full_load_rows": settings.max_full_load_rows,
             "max_bytes": settings.max_upload_bytes,
             "settings": settings,
+            "allow_over_limit": allow_over_limit,
         }
     if name == "query_database":
         return {

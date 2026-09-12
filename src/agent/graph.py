@@ -42,6 +42,11 @@ from src.agent.json_output import (
     JsonOutputError,
     decide_after_parse_failure,
 )
+from src.agent.load_approval import (
+    apply_load_decision,
+    build_load_interrupt,
+    is_over_limit_load,
+)
 from src.agent.llm import LlmError, complete
 from src.agent.profile_steps import (
     SECTION_DQ,
@@ -405,6 +410,26 @@ def build_graph(
         except Exception as exc:
             _LOG.info("graph tool failed name=%s", name)
             return {"error": str(exc), "pending_tool": None}
+        if name == "load_full_file" and is_over_limit_load(result):
+            _LOG.info(
+                "graph approve_load interrupt source_id=%s",
+                result.get("source_id"),
+            )
+            applied = apply_load_decision(interrupt(build_load_interrupt(result)))
+            if applied.get("error"):
+                return {"error": applied["error"], "pending_tool": None}
+            try:
+                result = run_allowlisted_tool(
+                    name,
+                    arguments,
+                    settings,
+                    include_postgres=include_postgres,
+                    connect=connect,
+                    allow_over_limit=True,
+                )
+            except Exception as exc:
+                _LOG.info("graph tool failed name=%s", name)
+                return {"error": str(exc), "pending_tool": None}
         updates: dict[str, Any] = {
             "last_tool_result": result,
             "pending_tool": None,

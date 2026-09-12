@@ -107,6 +107,15 @@ def test_validate_tool_call_strips_app_keys():
     assert checked["arguments"] == {}
 
 
+def test_validate_tool_call_strips_allow_over_limit():
+    """The model cannot force an over-limit full-file load."""
+    checked = validate_tool_call(
+        "load_full_file",
+        {"source_id": "file-abc", "allow_over_limit": True},
+    )
+    assert checked["arguments"] == {"source_id": "file-abc"}
+
+
 def test_validate_missing_source_id_is_rejected():
     """read_file_sample requires source_id. Fields are not guessed."""
     with pytest.raises(ToolValidationError, match="Missing keys: source_id"):
