@@ -28,6 +28,7 @@ DEFAULT_MAX_UPLOAD_BYTES = 50 * 1024 * 1024
 DEFAULT_MAX_FULL_LOAD_ROWS = 100_000
 DEFAULT_SAMPLE_N_ROWS = 50
 DEFAULT_SANDBOX_TIMEOUT_S = 30
+DEFAULT_OLLAMA_TIMEOUT_S = 120
 DEFAULT_MAX_PROMPT_CHARS = 8_000
 
 _REDACTED_FIELDS = frozenset({"db_password"})
@@ -46,6 +47,7 @@ class Settings:
     ollama_model_fallback_fast: str
     ollama_model_agentic: str
     ollama_model_coding: str
+    ollama_timeout_s: int
     upload_dir: Path
     context_dir: Path
     cache_dir: Path
@@ -100,6 +102,9 @@ def load_settings(
         ollama_model_fallback_fast=_get_str(environ, "OLLAMA_MODEL_FALLBACK_FAST", ""),
         ollama_model_agentic=_get_str(environ, "OLLAMA_MODEL_AGENTIC", ""),
         ollama_model_coding=_get_str(environ, "OLLAMA_MODEL_CODING", ""),
+        ollama_timeout_s=_get_int(
+            environ, "OLLAMA_TIMEOUT_S", DEFAULT_OLLAMA_TIMEOUT_S
+        ),
         upload_dir=_get_path(environ, "UPLOAD_DIR", DEFAULT_UPLOAD_DIR, root),
         context_dir=_get_path(environ, "CONTEXT_DIR", DEFAULT_CONTEXT_DIR, root),
         cache_dir=_get_path(environ, "CACHE_DIR", DEFAULT_CACHE_DIR, root),

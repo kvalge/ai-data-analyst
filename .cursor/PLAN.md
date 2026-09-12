@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission. Code `# TODO` / `# FIXME` comments are also listed under **Open TODOs (code)** below.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** Next step: **3.3**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** Next step: **3.4**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -26,9 +26,9 @@ Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 | Context same-name upload | **Overwrite** the file in `CONTEXT_DIR`. Basename is the document identity (unlike hashed data sources). No auto-rename, no reject. |
 | Tool results | Success = plain dict matching `result_schema`. Failure = raise a domain exception. No per-tool ok/error wrapper. |
 | `profile_source` scope | **Quick overview of a bounded head** (`n_rows`, default `SAMPLE_N_ROWS`). Not a whole-file profiler. Whole-file numbers only when the file fits in that cap (plus CSV `file_row_count`). Exact large-file profile is 2.12+. |
-| New env vars (placeholders in `.env.example`) | `CONTEXT_DIR`, `CACHE_DIR`, `ARTIFACT_DIR`, `CHECKPOINT_PATH`, `MAX_UPLOAD_BYTES`, `MAX_FULL_LOAD_ROWS`, `SAMPLE_N_ROWS`, `SANDBOX_TIMEOUT_S`, `MAX_PROMPT_CHARS` |
+| New env vars (placeholders in `.env.example`) | `CONTEXT_DIR`, `CACHE_DIR`, `ARTIFACT_DIR`, `CHECKPOINT_PATH`, `MAX_UPLOAD_BYTES`, `MAX_FULL_LOAD_ROWS`, `SAMPLE_N_ROWS`, `SANDBOX_TIMEOUT_S`, `OLLAMA_TIMEOUT_S`, `MAX_PROMPT_CHARS` |
 
-**Default limits:** upload 50 MB; sample 50 rows; auto full-load pause above 100 000 rows or 50 MB; sandbox 30 s; prompt 8 000 characters.
+**Default limits:** upload 50 MB; sample 50 rows; auto full-load pause above 100 000 rows or 50 MB; sandbox 30 s; Ollama generate 120 s; prompt 8 000 characters.
 
 **SQL static checks:** single statement; reject write/DDL (`INSERT`, `UPDATE`, `DELETE`, `DROP`, `ALTER`, `CREATE`, `TRUNCATE`, `GRANT`, `COPY`, `INTO`).
 
@@ -310,9 +310,10 @@ No sandbox code execution yet. Tools: `list_available_sources`, `read_file_sampl
 
 ### 3.3 Ollama client wrapper
 
-- `src/agent/llm.py`: host + model from env; `think=false` for structured calls; no hardcoded model names.
-- Role picker: primary by default.
-- Tests: mock urllib/httpx; assert model comes from env.
+- [x] `src/agent/llm.py`: host + model from env; `think=false` for structured calls; no hardcoded model names.
+- [x] Role picker: primary by default.
+- [x] Tests: mock urllib/httpx; assert model comes from env.
+- Stdlib `urllib` only (no httpx). `:cloud` model tags are rejected.
 
 ### 3.4 Agent state
 
@@ -628,6 +629,6 @@ Not current-step work and not code `# TODO`s. Revisit when the listed step runs.
 
 ## Current focus
 
-**3.2 done.** Next: **3.3 Ollama client wrapper**.
-Do not start 3.3 until you say to proceed.
-`parse_json_output` strips fences, loads JSON, and checks required/extra keys. First failure → `retry_strict`; second → fail. No guessed fields.
+**3.3 done.** Next: **3.4 Agent state**.
+Do not start 3.4 until you say to proceed.
+`complete` POSTs `/api/generate` via urllib. Model and host come from `Settings`. Default role is primary. Structured calls set `think=false`.

@@ -9,6 +9,7 @@ from src.config import (
     DEFAULT_MAX_PROMPT_CHARS,
     DEFAULT_MAX_UPLOAD_BYTES,
     DEFAULT_OLLAMA_HOST,
+    DEFAULT_OLLAMA_TIMEOUT_S,
     DEFAULT_SAMPLE_N_ROWS,
     DEFAULT_SANDBOX_TIMEOUT_S,
     SettingsError,
@@ -48,8 +49,21 @@ def test_defaults_resolve(tmp_path):
     assert settings.max_full_load_rows == DEFAULT_MAX_FULL_LOAD_ROWS
     assert settings.sample_n_rows == DEFAULT_SAMPLE_N_ROWS
     assert settings.sandbox_timeout_s == DEFAULT_SANDBOX_TIMEOUT_S
+    assert settings.ollama_timeout_s == DEFAULT_OLLAMA_TIMEOUT_S
     assert settings.max_prompt_chars == DEFAULT_MAX_PROMPT_CHARS
     assert settings.log_level == "INFO"
+
+
+def test_ollama_timeout_from_env(tmp_path):
+    """OLLAMA_TIMEOUT_S is read from the environment."""
+    settings = load_settings(
+        environ={"OLLAMA_TIMEOUT_S": "90"},
+        load_dotenv_file=False,
+        project_root=tmp_path,
+        require_models=False,
+    )
+
+    assert settings.ollama_timeout_s == 90
 
 
 def test_upload_dir_from_env(tmp_path):
