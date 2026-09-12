@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission. Code `# TODO` / `# FIXME` comments are also listed under **Open TODOs (code)** below.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** Next step: **3.4**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** Next step: **3.5**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -317,8 +317,9 @@ No sandbox code execution yet. Tools: `list_available_sources`, `read_file_sampl
 
 ### 3.4 Agent state
 
-- `src/agent/state.py` TypedDict: `messages`, `hitl_mode`, `source_ids`, `profile_summary`, `pending_interrupt`, `last_tool_result`, `artifacts` (paths only), `error`.
-- No dataframes in state.
+- [x] `src/agent/state.py` TypedDict: `messages`, `hitl_mode`, `source_ids`, `profile_summary`, `pending_interrupt`, `last_tool_result`, `artifacts` (paths only), `error`.
+- [x] No dataframes in state.
+- HITL mode strings match the UI labels; `empty_agent_state` does not import Streamlit.
 
 ### 3.5 System prompt
 
@@ -598,6 +599,7 @@ Mirrored from `# TODO` / `# FIXME` in the repo. Update this table in the same ch
 | `src/storage/registry.py` | A registry row whose stored file was deleted is still listed. |
 | `src/profiling/cache.py` | Postgres `sha256` is a connection fingerprint, not table contents; revisit invalidation in 2.11. |
 | `src/profiling/dq.py` | `_THOUSANDS` is US-style only (`1,234.56`); unverified against source data; European `1.234,56` is not flagged. |
+| `src/agent/state.py` | `as_artifact_path` does not yet require the path to resolve inside `ARTIFACT_DIR`. Enforce in 4.2 (sandbox copy); 7.x only displays. |
 
 ---
 
@@ -612,6 +614,7 @@ Not current-step work and not code `# TODO`s. Revisit when the listed step runs.
 | later | `_type_mismatch_kind` still uses early-return. 2.6 did not add a third type-mismatch parser; flatten into an ordered loop if type and format parsers are ever merged. |
 | later | Thousands-separator locale: decide how to detect which numeric style a column uses (US vs EU, possibly mixed). Do not just add a second hardcoded regex next to `_THOUSANDS`. (Also a code TODO in `dq.py`.) |
 | later fixture | `detect_nulls` empty-frame test is 0 rows with columns present. An all-null column (rows exist; pandas may infer `float64`) is a different shape; cover it if a later DQ fixture already looks like that. |
+| 3.6 / 5.x | `profile_summary` and `last_tool_result` are `dict[str, Any]`; a DataFrame can be assigned at runtime. The annotation-string test does not catch that. Before checkpoints persist state, add `is_json_safe` (or `json.dumps` without `default=str`) so a frame fails closed. |
 
 ---
 
@@ -629,6 +632,6 @@ Not current-step work and not code `# TODO`s. Revisit when the listed step runs.
 
 ## Current focus
 
-**3.3 done.** Next: **3.4 Agent state**.
-Do not start 3.4 until you say to proceed.
-`complete` POSTs `/api/generate` via urllib. Model and host come from `Settings`. Default role is primary. Structured calls set `think=false`.
+**3.4 done.** Next: **3.5 System prompt**.
+Do not start 3.5 until you say to proceed.
+`AgentState` holds messages, HITL mode, source ids, compact summaries, artifact paths, and error. No dataframes.

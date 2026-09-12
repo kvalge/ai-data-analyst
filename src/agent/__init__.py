@@ -1,6 +1,6 @@
 # __init__.py
 
-"""Agent orchestration: parse helpers and the local Ollama client."""
+"""Agent orchestration: parse helpers, local Ollama client, and graph state."""
 
 from src.agent.json_output import (
     FAIL,
@@ -22,6 +22,16 @@ from src.agent.llm import (
     complete,
     model_for_role,
 )
+from src.agent.state import (
+    ALLOWED_HITL_MODES,
+    HITL_MODE_AUTO,
+    HITL_MODE_GUIDED,
+    HITL_MODE_STANDARD,
+    AgentMessage,
+    AgentState,
+    as_artifact_path,
+    empty_agent_state,
+)
 
 __all__ = [
     "FAIL",
@@ -40,4 +50,12 @@ __all__ = [
     "LlmError",
     "complete",
     "model_for_role",
+    "ALLOWED_HITL_MODES",
+    "HITL_MODE_AUTO",
+    "HITL_MODE_GUIDED",
+    "HITL_MODE_STANDARD",
+    "AgentMessage",
+    "AgentState",
+    "as_artifact_path",
+    "empty_agent_state",
 ]
