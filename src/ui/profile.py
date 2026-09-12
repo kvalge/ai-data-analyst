@@ -8,10 +8,7 @@ from typing import Any, Iterable
 
 import streamlit as st
 
-from src.ui.profile_step import (
-    ACTION_ABORT,
-    ACTION_CONTINUE,
-    ACTION_SKIP_REMAINING,
+from src.agent.profile_steps import (
     PROFILE_SECTIONS,
     SECTION_DQ,
     SECTION_EDA,
@@ -169,21 +166,6 @@ def render_profile(
         render_dq_section(result["dq"])
     if SECTION_EDA in shown:
         render_eda_section(result["eda"])
-
-
-def render_guided_stepper() -> str | None:
-    """Continue, Skip remaining, or Abort. None if no button was clicked."""
-    continue_col, skip_col, abort_col = st.columns(3)
-    with continue_col:
-        if st.button("Continue", key="profile_continue"):
-            return ACTION_CONTINUE
-    with skip_col:
-        if st.button("Skip remaining", key="profile_skip_remaining"):
-            return ACTION_SKIP_REMAINING
-    with abort_col:
-        if st.button("Abort", key="profile_abort"):
-            return ACTION_ABORT
-    return None
 
 
 def render_schema_section(schema: dict[str, Any]) -> None:

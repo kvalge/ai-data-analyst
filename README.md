@@ -21,7 +21,8 @@ sandbox are not bound yet.
   not a whole-file profile; the dataset is not shown)
 - **Chat** with the local primary model (it may call list / sample / profile /
   load_full_file). Chat pauses to confirm the source when none are registered,
-  several are present with none selected, or the sample/schema is empty.
+  several are present with none selected, or the sample/schema is empty. In
+  **Guided** mode it also pauses after schema, data quality, and EDA.
 
 ## What is not here yet
 
@@ -59,9 +60,10 @@ streamlit run src/ui/app.py
 source list, optional Postgres test. **Main:** preview and profile panels
 (they can stay open together; close either from its heading), then chat.
 
-In **Guided** mode, profile pauses after schema, then data quality, then EDA
-(Continue / Skip remaining / Abort). Standard and Auto show all sections at
-once.
+In **Guided** mode, chat pauses after schema, then data quality, then EDA
+(Continue / Skip remaining / Abort). Standard and Auto run those steps
+without pausing. The sidebar Profile button always shows the full cached
+summary.
 
 Optional Postgres: set `DB_NAME` and `DB_USER` in `.env`. Use **Test
 connection**, then **Use configured database** to list it as a source.

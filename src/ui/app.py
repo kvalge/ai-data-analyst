@@ -27,25 +27,12 @@ from src.tools.list_sources import list_available_sources
 from src.tools.profile_source import ProfileError, profile_source
 from src.tools.read_sample import read_file_sample
 from src.ui.chat import render_chat
-from src.ui.hitl import HITL_MODE_KEY, HitlMode, ensure_hitl_mode, resolve_hitl_mode
+from src.ui.hitl import HITL_MODE_KEY, HitlMode, ensure_hitl_mode
 from src.ui.profile import (
     PROFILE_SOURCE_ID_KEY,
     SELECTED_SOURCE_ID_KEY,
     render_closable_heading,
-    render_guided_stepper,
     render_profile,
-)
-from src.ui.profile_step import (
-    ACTION_ABORT,
-    ACTION_CONTINUE,
-    ACTION_SKIP_REMAINING,
-    PROFILE_STEP_KEY,
-    continue_profile_step,
-    initial_profile_step,
-    profile_stepper_active,
-    resolve_profile_step,
-    skip_remaining_profile_step,
-    visible_profile_sections,
 )
 from src.validation.context_files import CONTEXT_FILE_SUFFIXES
 from src.validation.data_files import DATA_FILE_SUFFIXES
@@ -163,16 +150,12 @@ with st.sidebar:
             key=SELECTED_SOURCE_ID_KEY,
         )
         if st.button("Profile selected source"):
-            mode = resolve_hitl_mode(st.session_state.get(HITL_MODE_KEY))
             st.session_state[PROFILE_SOURCE_ID_KEY] = st.session_state[
                 SELECTED_SOURCE_ID_KEY
             ]
-            st.session_state[PROFILE_STEP_KEY] = initial_profile_step(mode)
             logging.getLogger(__name__).info(
-                "UI profile requested source_id=%s mode=%s step=%s",
+                "UI profile requested source_id=%s",
                 st.session_state[PROFILE_SOURCE_ID_KEY],
-                mode,
-                st.session_state[PROFILE_STEP_KEY],
             )
 
     st.subheader("Context files")
@@ -186,14 +169,7 @@ profile_id = st.session_state.get(PROFILE_SOURCE_ID_KEY)
 if profile_id:
     if render_closable_heading("Profile", close_key="close_profile"):
         st.session_state.pop(PROFILE_SOURCE_ID_KEY, None)
-        st.session_state.pop(PROFILE_STEP_KEY, None)
         st.rerun()
-    mode = resolve_hitl_mode(st.session_state.get(HITL_MODE_KEY))
-    step = (
-        resolve_profile_step(st.session_state.get(PROFILE_STEP_KEY))
-        if mode == HitlMode.GUIDED
-        else initial_profile_step(mode)
-    )
     try:
         result = profile_source(
             upload_dir=settings.upload_dir,
@@ -203,37 +179,7 @@ if profile_id:
             source_id=profile_id,
             settings=settings,
         )
-        render_profile(result, sections=visible_profile_sections(step))
-        if profile_stepper_active(mode, step):
-            st.caption(
-                "Guided pause — the compact summary is already computed. "
-                "Continue, skip remaining, or abort."
-            )
-            action = render_guided_stepper()
-            if action == ACTION_CONTINUE:
-                st.session_state[PROFILE_STEP_KEY] = continue_profile_step(step)
-                logging.getLogger(__name__).info(
-                    "UI profile continue source_id=%s step=%s",
-                    profile_id,
-                    st.session_state[PROFILE_STEP_KEY],
-                )
-                st.rerun()
-            if action == ACTION_SKIP_REMAINING:
-                st.session_state[PROFILE_STEP_KEY] = skip_remaining_profile_step()
-                logging.getLogger(__name__).info(
-                    "UI profile skip remaining source_id=%s",
-                    profile_id,
-                )
-                st.rerun()
-            if action == ACTION_ABORT:
-                logging.getLogger(__name__).info(
-                    "UI profile abort source_id=%s step=%s",
-                    profile_id,
-                    step,
-                )
-                st.session_state.pop(PROFILE_SOURCE_ID_KEY, None)
-                st.session_state.pop(PROFILE_STEP_KEY, None)
-                st.rerun()
+        render_profile(result)
     except (FileValidationError, ProfileError, RegistryError) as exc:
         st.error(str(exc))
 

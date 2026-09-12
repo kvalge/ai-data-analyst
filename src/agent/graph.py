@@ -1,6 +1,6 @@
 # graph.py
 
-"""LangGraph: agent decides; execute_tool runs allowlisted Phase 3 tools."""
+"""LangGraph: confirm sources, profile, then agent ⇄ execute_tool."""
 
 from __future__ import annotations
 
@@ -34,9 +34,22 @@ from src.agent.json_output import (
     decide_after_parse_failure,
 )
 from src.agent.llm import LlmError, complete
+from src.agent.profile_steps import (
+    SECTION_DQ,
+    SECTION_EDA,
+    SECTION_SCHEMA,
+    apply_profile_decision,
+    build_profile_interrupt,
+    should_pause_profiling,
+    with_cleared_profile_ids,
+)
 from src.agent.prompts import build_system_prompt
 from src.agent.state import AgentState
 from src.config import Settings
+from src.db.postgres import postgres_configured
+from src.storage.registry import get_file_source
+from src.storage.sources import make_postgres_source
+from src.tools.profile_source import profile_source
 from src.tools.registry import TOOL_REGISTRY
 
 _LOG = logging.getLogger(__name__)
@@ -68,6 +81,12 @@ def build_prompt(state: AgentState) -> str:
             "Last tool result (do not invent extra rows):\n"
             + json.dumps(result)
         )
+    summary = state.get("profile_summary")
+    if summary is not None:
+        parts.append(
+            "Profile summary (bounded head, not the dataset):\n"
+            + json.dumps(summary)
+        )
     return "\n\n".join(parts)
 
 
@@ -89,7 +108,28 @@ def route_after_execute(state: AgentState) -> str:
 
 
 def route_after_confirm(state: AgentState) -> str:
-    """After abort or a confirm error, end. Otherwise continue to the agent."""
+    """After abort or a confirm error, end. Otherwise run schema detection."""
+    if state.get("error"):
+        return END
+    return "detect_schema"
+
+
+def route_after_schema(state: AgentState) -> str:
+    """After a schema error or abort, end. Otherwise run data-quality checks."""
+    if state.get("error"):
+        return END
+    return "run_dq"
+
+
+def route_after_dq(state: AgentState) -> str:
+    """After a DQ error or abort, end. Otherwise run EDA."""
+    if state.get("error"):
+        return END
+    return "run_eda"
+
+
+def route_after_eda(state: AgentState) -> str:
+    """After an EDA error or abort, end. Otherwise continue to the agent."""
     if state.get("error"):
         return END
     return "agent"
@@ -101,8 +141,63 @@ def build_graph(
     complete_fn: CompleteFn | None = None,
     include_postgres: bool = False,
 ) -> Any:
-    """Compile START → confirm_sources → agent ⇄ execute_tool → END."""
+    """Compile START → confirm_sources → profile nodes → agent ⇄ execute_tool."""
     completer = complete_fn or complete
+
+    def _selected_source_id(state: AgentState) -> str | None:
+        ids = [
+            item
+            for item in (state.get("source_ids") or [])
+            if isinstance(item, str) and item
+        ]
+        return ids[0] if ids else None
+
+    def _cleared_profile_ids(state: AgentState) -> list[str]:
+        return [
+            item
+            for item in (state.get("cleared_profile_source_ids") or [])
+            if isinstance(item, str)
+        ]
+
+    def _is_postgres_source(source_id: str) -> bool:
+        if get_file_source(settings.upload_dir, source_id) is not None:
+            return False
+        if not postgres_configured(settings):
+            return False
+        return make_postgres_source(settings).source_id == source_id
+
+    def _load_profile(state: AgentState, source_id: str) -> dict[str, Any]:
+        existing = state.get("profile_summary")
+        if isinstance(existing, dict) and existing.get("source_id") == source_id:
+            return existing
+        return profile_source(
+            upload_dir=settings.upload_dir,
+            cache_dir=settings.cache_dir,
+            n_rows=settings.sample_n_rows,
+            max_bytes=settings.max_upload_bytes,
+            source_id=source_id,
+            settings=settings,
+        )
+
+    def _maybe_pause_profile(
+        step: str,
+        summary: dict[str, Any],
+        state: AgentState,
+        updates: dict[str, Any],
+    ) -> dict[str, Any]:
+        source_id = str(summary.get("source_id") or "")
+        cleared = _cleared_profile_ids(state)
+        hitl_mode = state.get("hitl_mode") or ""
+        if not should_pause_profiling(str(hitl_mode)) or source_id in cleared:
+            return updates
+        _LOG.info("graph %s interrupt source_id=%s", step, source_id)
+        decision = interrupt(build_profile_interrupt(step, summary))
+        applied = apply_profile_decision(
+            decision,
+            source_id=source_id,
+            cleared_profile_source_ids=cleared,
+        )
+        return {**updates, **applied}
 
     def confirm_sources_node(state: AgentState) -> dict[str, Any]:
         sources = list_confirm_sources(
@@ -154,6 +249,62 @@ def build_graph(
                         chosen,
                         cleared_empty_source_ids=cleared,
                     )
+        return updates
+
+    def detect_schema_node(state: AgentState) -> dict[str, Any]:
+        source_id = _selected_source_id(state)
+        if not source_id:
+            return {"error": "No data source selected."}
+        if _is_postgres_source(source_id):
+            _LOG.info("graph detect_schema skip postgres")
+            return {"error": None}
+        try:
+            summary = _load_profile(state, source_id)
+        except Exception as exc:
+            _LOG.info("graph detect_schema failed")
+            return {"error": str(exc)}
+        updates: dict[str, Any] = {
+            "profile_summary": summary,
+            "pending_interrupt": None,
+            "error": None,
+        }
+        return _maybe_pause_profile(SECTION_SCHEMA, summary, state, updates)
+
+    def run_dq_node(state: AgentState) -> dict[str, Any]:
+        source_id = _selected_source_id(state)
+        if not source_id:
+            return {"error": "No data source selected."}
+        if _is_postgres_source(source_id):
+            _LOG.info("graph run_dq skip postgres")
+            return {"error": None}
+        summary = state.get("profile_summary")
+        if not isinstance(summary, dict):
+            return {"error": "Profile summary is missing."}
+        return _maybe_pause_profile(
+            SECTION_DQ, summary, state, {"pending_interrupt": None, "error": None}
+        )
+
+    def run_eda_node(state: AgentState) -> dict[str, Any]:
+        source_id = _selected_source_id(state)
+        if not source_id:
+            return {"error": "No data source selected."}
+        if _is_postgres_source(source_id):
+            _LOG.info("graph run_eda skip postgres")
+            return {"error": None}
+        summary = state.get("profile_summary")
+        if not isinstance(summary, dict):
+            return {"error": "Profile summary is missing."}
+        updates = _maybe_pause_profile(
+            SECTION_EDA, summary, state, {"pending_interrupt": None, "error": None}
+        )
+        if updates.get("error"):
+            return updates
+        cleared = updates.get("cleared_profile_source_ids")
+        if not isinstance(cleared, list):
+            cleared = _cleared_profile_ids(state)
+        updates["cleared_profile_source_ids"] = with_cleared_profile_ids(
+            list(cleared), [source_id]
+        )
         return updates
 
     def _llm_reply(prompt: str) -> str:
@@ -229,12 +380,30 @@ def build_graph(
 
     graph = StateGraph(AgentState)
     graph.add_node("confirm_sources", confirm_sources_node)
+    graph.add_node("detect_schema", detect_schema_node)
+    graph.add_node("run_dq", run_dq_node)
+    graph.add_node("run_eda", run_eda_node)
     graph.add_node("agent", agent_node)
     graph.add_node("execute_tool", execute_tool_node)
     graph.add_edge(START, "confirm_sources")
     graph.add_conditional_edges(
         "confirm_sources",
         route_after_confirm,
+        {"detect_schema": "detect_schema", END: END},
+    )
+    graph.add_conditional_edges(
+        "detect_schema",
+        route_after_schema,
+        {"run_dq": "run_dq", END: END},
+    )
+    graph.add_conditional_edges(
+        "run_dq",
+        route_after_dq,
+        {"run_eda": "run_eda", END: END},
+    )
+    graph.add_conditional_edges(
+        "run_eda",
+        route_after_eda,
         {"agent": "agent", END: END},
     )
     graph.add_conditional_edges(

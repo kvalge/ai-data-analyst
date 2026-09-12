@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission. Code `# TODO` / `# FIXME` comments are also listed under **Open TODOs (code)** below.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** Next step: **3.11**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** Next step: **3.12**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -286,7 +286,7 @@ Profiling is functions + cache. Guided pauses here are **Streamlit Continue butt
 - [x] If mode is Guided: show schema → wait Continue → DQ → Continue → EDA.
 - [x] Standard/Auto: run all, then show.
 - [x] Skip remaining / abort buttons.
-- `profile_source` still computes the compact summary in one pass; the stepper only reveals sections. Graph interrupts are 3.11.
+- `profile_source` still computes the compact summary in one pass; the stepper only revealed sections. Graph interrupts replaced this in 3.11.
 - **Done when:** Guided pauses; Standard does not. Still no LangGraph.
 
 ---
@@ -317,7 +317,7 @@ No sandbox code execution yet. Tools: `list_available_sources`, `read_file_sampl
 
 ### 3.4 Agent state
 
-- [x] `src/agent/state.py` TypedDict: `messages`, `hitl_mode`, `source_ids`, `cleared_empty_source_ids`, `profile_summary`, `pending_interrupt`, `pending_tool`, `last_tool_result`, `artifacts` (paths only), `error`.
+- [x] `src/agent/state.py` TypedDict: `messages`, `hitl_mode`, `source_ids`, `cleared_empty_source_ids`, `cleared_profile_source_ids`, `profile_summary`, `pending_interrupt`, `pending_tool`, `last_tool_result`, `artifacts` (paths only), `error`.
 - [x] No dataframes in state.
 - HITL mode strings match the UI labels; `empty_agent_state` does not import Streamlit.
 
@@ -365,9 +365,10 @@ No sandbox code execution yet. Tools: `list_available_sources`, `read_file_sampl
 
 ### 3.11 Move Guided profiling into the graph
 
-- Nodes `detect_schema`, `run_dq`, `run_eda` + interrupts in Guided.
-- Remove the Phase 2 UI stepper (or make it call the graph).
-- Mocked tests: Standard runs three nodes without interrupt; Guided interrupts three times.
+- [x] Nodes `detect_schema`, `run_dq`, `run_eda` + interrupts in Guided.
+- [x] Remove the Phase 2 UI stepper (or make it call the graph).
+- [x] Mocked tests: Standard runs three nodes without interrupt; Guided interrupts three times.
+- One `profile_source` pass (then cache). Interrupt payloads are compact sections only (no rows). `cleared_profile_source_ids` skips re-pauses on later turns. Postgres skips profiling and continues to the agent. Sidebar Profile shows the full cached summary; Guided Continue / Skip remaining / Abort live in chat.
 
 ### 3.12 Visible failure after retry
 
@@ -640,6 +641,7 @@ Not current-step work and not code `# TODO`s. Revisit when the listed step runs.
 
 ## Current focus
 
-**3.10 done.** Next: **3.11 Move Guided profiling into the graph**.
-Do not start 3.11 until you say to proceed.
-`START → confirm_sources → agent`. Interrupt reasons: `no_sources`, `multiple_sources`, `empty_schema`.
+**3.11 done.** Next: **3.12 Visible failure after retry**.
+Do not start 3.12 until you say to proceed.
+`START → confirm_sources → detect_schema → run_dq → run_eda → agent ⇄ execute_tool`.
+Guided pauses after schema, DQ, and EDA (continue / skip remaining / abort). Standard and Auto run through.

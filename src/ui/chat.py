@@ -13,10 +13,14 @@ from langgraph.types import Command
 
 from src.agent.confirm_sources import KIND_CONFIRM_SOURCES
 from src.agent.graph import build_graph
+from src.agent.profile_steps import KIND_PROFILE_STEP
 from src.agent.state import AgentMessage, empty_agent_state
 from src.config import Settings
 from src.ui.hitl import HITL_MODE_KEY, resolve_hitl_mode
+from src.ui.profile_pause import render_profile_pause
 from src.ui.source_confirm import render_source_confirm
+
+_INTERRUPT_KINDS = frozenset({KIND_CONFIRM_SOURCES, KIND_PROFILE_STEP})
 
 _LOG = logging.getLogger(__name__)
 
@@ -88,24 +92,34 @@ def visible_chat_error(
 
 
 def graph_interrupt_payload(graph: Any, thread_id: str) -> dict[str, Any] | None:
-    """Return the confirm_sources interrupt value, if the graph is paused."""
+    """Return a known interrupt value, if the graph is paused."""
     snap = graph.get_state(thread_config(thread_id))
     interrupts = getattr(snap, "interrupts", ()) or ()
     if not interrupts:
         return None
     value = getattr(interrupts[0], "value", None)
-    if isinstance(value, dict) and value.get("kind") == KIND_CONFIRM_SOURCES:
+    if isinstance(value, dict) and value.get("kind") in _INTERRUPT_KINDS:
         return value
     return None
 
 
-def resume_confirm_sources(
+def graph_profile_summary(graph: Any, thread_id: str) -> dict[str, Any] | None:
+    """Return the checkpointed compact profile, if one was written."""
+    snap = graph.get_state(thread_config(thread_id))
+    values = snap.values or {}
+    summary = values.get("profile_summary")
+    if isinstance(summary, dict):
+        return summary
+    return None
+
+
+def resume_interrupt(
     graph: Any,
     *,
     decision: dict[str, Any],
     thread_id: str,
 ) -> dict[str, Any]:
-    """Resume a confirm_sources interrupt with the user's decision."""
+    """Resume a graph interrupt with the user's decision."""
     return _invoke_or_error(
         graph,
         Command(resume=decision),
@@ -179,14 +193,25 @@ def render_chat(
         st.error(error)
     pending = graph_interrupt_payload(graph, thread_id)
     if pending is not None:
-        decision = render_source_confirm(pending)
+        kind = pending.get("kind")
+        decision: dict[str, Any] | None = None
+        caption = "Confirm, select, or abort the data source before chatting."
+        if kind == KIND_CONFIRM_SOURCES:
+            decision = render_source_confirm(pending)
+        elif kind == KIND_PROFILE_STEP:
+            decision = render_profile_pause(
+                pending, graph_profile_summary(graph, thread_id)
+            )
+            caption = (
+                "Continue, skip remaining, or abort profiling before chatting."
+            )
         if decision is not None:
-            result = resume_confirm_sources(
+            result = resume_interrupt(
                 graph, decision=decision, thread_id=thread_id
             )
             store_invoke_result(st.session_state, result)
             st.rerun()
-        st.caption("Confirm, select, or abort the data source before chatting.")
+        st.caption(caption)
         return
     if not settings.ollama_model_primary:
         st.caption("Set OLLAMA_MODEL_* in .env to enable chat.")

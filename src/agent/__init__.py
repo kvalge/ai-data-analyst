@@ -23,6 +23,14 @@ from src.agent.confirm_sources import (
     build_interrupt_payload,
     decide_confirm_reason,
 )
+from src.agent.profile_steps import (
+    ACTION_CONTINUE,
+    ACTION_SKIP_REMAINING,
+    KIND_PROFILE_STEP,
+    apply_profile_decision,
+    build_profile_interrupt,
+    should_pause_profiling,
+)
 from src.agent.execute import (
     ToolValidationError,
     interpret_model_reply,
@@ -83,11 +91,17 @@ __all__ = [
     "CompleteFn",
     "ACTION_ABORT",
     "ACTION_CONFIRM",
+    "ACTION_CONTINUE",
     "ACTION_SELECT",
+    "ACTION_SKIP_REMAINING",
     "KIND_CONFIRM_SOURCES",
+    "KIND_PROFILE_STEP",
     "apply_confirm_decision",
+    "apply_profile_decision",
     "build_interrupt_payload",
+    "build_profile_interrupt",
     "decide_confirm_reason",
+    "should_pause_profiling",
     "build_graph",
     "build_prompt",
     "ToolValidationError",
