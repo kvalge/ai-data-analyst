@@ -8,6 +8,8 @@ import operator
 from pathlib import Path
 from typing import Annotated, Any, TypedDict
 
+from src.execution.paths import path_is_inside
+
 # Match src/ui/hitl.py HitlMode values. Agent code must not import the UI.
 HITL_MODE_GUIDED = "Guided"
 HITL_MODE_STANDARD = "Standard"
@@ -59,13 +61,21 @@ def empty_agent_state(*, hitl_mode: str = HITL_MODE_STANDARD) -> AgentState:
     }
 
 
-def as_artifact_path(path: Path | str) -> str:
-    """Store an artifact as a filesystem path string, never file contents."""
-    # TODO: reject paths outside ARTIFACT_DIR when 4.2 copies artifacts
-    # (7.x only displays them). Needs Settings; do not trust callers.
+def as_artifact_path(path: Path | str, *, artifact_dir: Path) -> str:
+    """Store an artifact as a filesystem path string, never file contents.
+
+    After resolve, the path must sit inside `artifact_dir` (ARTIFACT_DIR).
+    Containment is checked before any existence probe of `path`.
+    """
     if not isinstance(path, (Path, str)):
         raise TypeError("Artifacts must be filesystem paths.")
     text = str(path).strip()
     if not text:
         raise ValueError("Artifact path is empty.")
-    return text
+    root = Path(artifact_dir).resolve()
+    if not root.is_dir():
+        raise ValueError("artifact_dir is not a directory.")
+    resolved = Path(text).resolve()
+    if not path_is_inside(resolved, root):
+        raise ValueError("Artifact path must resolve inside ARTIFACT_DIR.")
+    return str(resolved)

@@ -105,22 +105,37 @@ def test_agent_state_annotations_omit_dataframe():
     assert "ndarray" not in rendered
 
 
-def test_as_artifact_path_stores_string():
+def test_as_artifact_path_stores_string(tmp_path: Path):
     """A Path is stored as a string path, not the file bytes."""
-    path = Path("data") / "artifacts" / "chart.png"
-    assert as_artifact_path(path) == str(path)
+    artifact_dir = tmp_path / "artifacts"
+    artifact_dir.mkdir()
+    path = artifact_dir / "chart.png"
+    assert as_artifact_path(path, artifact_dir=artifact_dir) == str(path.resolve())
 
 
-def test_as_artifact_path_rejects_non_path():
+def test_as_artifact_path_rejects_non_path(tmp_path: Path):
     """A non-path value is not coerced into an artifact."""
+    artifact_dir = tmp_path / "artifacts"
+    artifact_dir.mkdir()
     with pytest.raises(TypeError, match="filesystem paths"):
-        as_artifact_path(123)  # type: ignore[arg-type]
+        as_artifact_path(123, artifact_dir=artifact_dir)  # type: ignore[arg-type]
 
 
-def test_as_artifact_path_rejects_blank():
+def test_as_artifact_path_rejects_blank(tmp_path: Path):
     """An empty path string is not stored."""
+    artifact_dir = tmp_path / "artifacts"
+    artifact_dir.mkdir()
     with pytest.raises(ValueError, match="empty"):
-        as_artifact_path("   ")
+        as_artifact_path("   ", artifact_dir=artifact_dir)
+
+
+def test_as_artifact_path_rejects_outside_artifact_dir(tmp_path: Path):
+    """A path that resolves outside ARTIFACT_DIR is not stored."""
+    artifact_dir = tmp_path / "artifacts"
+    artifact_dir.mkdir()
+    sneaky = artifact_dir / ".." / "outside.png"
+    with pytest.raises(ValueError, match="inside"):
+        as_artifact_path(sneaky, artifact_dir=artifact_dir)
 
 
 def test_allowed_hitl_modes_match_ui_labels():

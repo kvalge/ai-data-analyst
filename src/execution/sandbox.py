@@ -10,6 +10,8 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+from src.execution.paths import path_is_inside
+
 _LOG = logging.getLogger(__name__)
 
 
@@ -51,7 +53,7 @@ def run_python_file(
     if not cwd.is_dir():
         raise SandboxError(f"Sandbox work dir is not a directory: {cwd}")
     script = Path(script_path).resolve()
-    if not _path_is_inside(script, cwd):
+    if not path_is_inside(script, cwd):
         raise SandboxError(
             "Python file must resolve inside the sandbox work dir."
         )
@@ -81,8 +83,3 @@ def run_python_file(
         stderr=completed.stderr or "",
         exit_code=int(completed.returncode),
     )
-
-
-def _path_is_inside(path: Path, root: Path) -> bool:
-    """True when resolved `path` is `root` or a descendant."""
-    return path.is_relative_to(root)

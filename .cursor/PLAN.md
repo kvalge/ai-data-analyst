@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission. Code `# TODO` / `# FIXME` comments are also listed under **Open TODOs (code)** below.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** **3.12 done.** **3.13 done.** **4.1 done.** Next step: **4.2**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** **3.12 done.** **3.13 done.** **4.1 done.** **4.2 done.** Next step: **4.3**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -396,8 +396,9 @@ No sandbox code execution yet. Tools: `list_available_sources`, `read_file_sampl
 
 ### 4.2 Sandbox work and artifact dirs
 
-- Per-run temp work dir; artifacts copied only into `ARTIFACT_DIR`.
-- Test: write outside work dir fails or is not visible to the app as success.
+- [x] Per-run temp work dir; artifacts copied only into `ARTIFACT_DIR`.
+- [x] Test: write outside work dir fails or is not visible to the app as success.
+- `sandbox_work_dir` is a `TemporaryDirectory` (deleted on exit). `copy_artifacts` harvests only regular files that resolve inside the work dir into a new uuid folder under `artifact_dir`. Symlinks and out-of-bounds candidates are skipped and logged at debug. A child write outside the work dir can still hit the OS; it is not copied and is not stored as an artifact. `as_artifact_path` now requires `artifact_dir` and rejects paths that resolve outside it (containment before existence of the candidate). Not wired to the graph or tools.
 
 ### 4.3 Python AST checks
 
@@ -612,7 +613,6 @@ Mirrored from `# TODO` / `# FIXME` in the repo. Update this table in the same ch
 | `src/storage/registry.py` | A registry row whose stored file was deleted is still listed. |
 | `src/profiling/cache.py` | Postgres `sha256` is a connection fingerprint, not table contents; revisit invalidation in 2.11. |
 | `src/profiling/dq.py` | `_THOUSANDS` is US-style only (`1,234.56`); unverified against source data; European `1.234,56` is not flagged. |
-| `src/agent/state.py` | `as_artifact_path` does not yet require the path to resolve inside `ARTIFACT_DIR`. Enforce in 4.2 (sandbox copy); 7.x only displays. |
 | `src/agent/audit.py` | Audit mkdir/write failures raise after a successful tool result. In 8.4 catch them and log a warning instead. |
 
 ---
@@ -646,6 +646,6 @@ Not current-step work and not code `# TODO`s. Revisit when the listed step runs.
 
 ## Current focus
 
-**4.1 done.** Next: **4.2 Sandbox work and artifact dirs**.
-Do not start 4.2 until you say to proceed.
-`run_python_file` spawns `sys.executable` on a file, cwd = work dir, timeout kills the child. Not bound to chat.
+**4.2 done.** Next: **4.3 Python AST checks**.
+Do not start 4.3 until you say to proceed.
+Per-run work dir is deleted after the run. Only files that resolve inside it are copied into `ARTIFACT_DIR`. Not bound to chat.
