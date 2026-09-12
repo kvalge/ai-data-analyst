@@ -19,8 +19,14 @@ from src.agent.code_approval import (
     TOOL_QUERY_DATABASE,
     TOOL_RUN_ANALYSIS_CODE,
 )
+from src.agent.audit import audit_log_path, default_audit_dir
 from src.agent.graph import build_graph
-from src.agent.state import HITL_MODE_STANDARD, AgentState, empty_agent_state
+from src.agent.state import (
+    HITL_MODE_AUTO,
+    HITL_MODE_STANDARD,
+    AgentState,
+    empty_agent_state,
+)
 from src.config import Settings, load_settings
 from src.storage.registry import list_file_sources, save_file_source
 from src.storage.sources import postgres_source_id
@@ -36,6 +42,7 @@ _PLACEHOLDER_MODELS = {
 
 _THREAD = {"configurable": {"thread_id": "code-approval-thread"}}
 _SQL_THREAD = {"configurable": {"thread_id": "code-approval-sql-thread"}}
+_AUTO_THREAD = {"configurable": {"thread_id": "code-approval-auto-thread"}}
 _PRINT = "print(1)\n"
 _SELECT = "SELECT date, region, revenue FROM sales"
 
@@ -58,8 +65,8 @@ def _source_id(settings: Settings) -> str:
     return list_file_sources(settings.upload_dir)[0].source_id
 
 
-def _user_turn(text: str) -> AgentState:
-    state = empty_agent_state(hitl_mode=HITL_MODE_STANDARD)
+def _user_turn(text: str, *, hitl_mode: str = HITL_MODE_STANDARD) -> AgentState:
+    state = empty_agent_state(hitl_mode=hitl_mode)
     state["messages"] = [{"role": "user", "content": text}]
     return state
 
@@ -79,6 +86,30 @@ def _interrupt_value(result: dict[str, Any]) -> dict[str, Any]:
     value = items[0].value
     assert isinstance(value, dict)
     return value
+
+
+def test_auto_runs_analysis_code_without_interrupt(settings: Settings):
+    """Auto executes generated Python immediately and still writes the audit line."""
+    source_id = _source_id(settings)
+    replies = [_tool_json(source_id), "printed one"]
+
+    def fake_complete(prompt: str, **kwargs: Any) -> str:
+        return replies.pop(0)
+
+    graph = build_graph(settings=settings, complete_fn=fake_complete)
+    result = graph.invoke(
+        _user_turn("print one", hitl_mode=HITL_MODE_AUTO), _AUTO_THREAD
+    )
+    assert result.get("__interrupt__") is None
+    assert result["error"] is None
+    assert "1" in result["last_tool_result"]["stdout"]
+    assert result["messages"][-1]["content"] == "printed one"
+    path = audit_log_path(default_audit_dir(settings.upload_dir))
+    record = json.loads(path.read_text(encoding="utf-8").strip())
+    assert record["tool"] == TOOL_RUN_ANALYSIS_CODE
+    assert record["source_id"] == source_id
+    assert set(record) == {"timestamp", "tool", "source_id"}
+    assert "code" not in record
 
 
 def test_standard_interrupts_before_run_analysis_code(settings: Settings):

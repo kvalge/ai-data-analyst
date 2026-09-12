@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission. Code `# TODO` / `# FIXME` comments are also listed under **Open TODOs (code)** below.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** **3.12 done.** **3.13 done.** **4.1 done.** **4.2 done.** **4.3 done.** **4.4 done.** **4.5 done.** **4.6 done.** **4.7 done.** **4.8 done.** Next step: **4.9**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** **3.12 done.** **3.13 done.** **4.1 done.** **4.2 done.** **4.3 done.** **4.4 done.** **4.5 done.** **4.6 done.** **4.7 done.** **4.8 done.** **4.9 done.** Next step: **4.10**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -440,8 +440,9 @@ No sandbox code execution yet. Tools: `list_available_sources`, `read_file_sampl
 
 ### 4.9 Auto mode skips code interrupt
 
-- Still write audit log.
-- Test: Auto executes without interrupt; Standard interrupts.
+- [x] Still write audit log.
+- [x] Test: Auto executes without interrupt; Standard interrupts.
+- Auto is already outside `should_pause_generated_code`. Graph test: Auto runs `run_analysis_code` with no `__interrupt__` and appends the existing tool-use audit line (tool, source_id, timestamp; not code). Standard still pauses (4.8). Logging generated text and the HITL decision is 4.12.
 
 ### 4.10 Full-file load interrupt over threshold
 
@@ -652,6 +653,6 @@ Not current-step work and not code `# TODO`s. Revisit when the listed step runs.
 
 ## Current focus
 
-**4.8 done.** Next: **4.9 Auto mode skips code interrupt**.
-Do not start 4.9 until you say to proceed.
-Standard and Guided pause before `run_analysis_code` / `query_database`. Approve runs; edit_run replaces the text; reject does not execute.
+**4.9 done.** Next: **4.10 Full-file load interrupt over threshold**.
+Do not start 4.10 until you say to proceed.
+Auto runs generated SQL/Python without a code interrupt and still writes the tool-use audit line. Standard and Guided still pause.
