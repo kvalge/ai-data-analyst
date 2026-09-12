@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission. Code `# TODO` / `# FIXME` comments are also listed under **Open TODOs (code)** below.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** **3.12 done.** **3.13 done.** **4.1 done.** **4.2 done.** Next step: **4.3**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** **3.12 done.** **3.13 done.** **4.1 done.** **4.2 done.** **4.3 done.** Next step: **4.4**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -402,8 +402,9 @@ No sandbox code execution yet. Tools: `list_available_sources`, `read_file_sampl
 
 ### 4.3 Python AST checks
 
-- Parse generated code; apply the deny-list; reject before spawn.
-- Tests: allowed pandas snippet; rejected `subprocess` import.
+- [x] Parse generated code; apply the deny-list; reject before spawn.
+- [x] Tests: allowed pandas snippet; rejected `subprocess` import.
+- `check_python_ast` in `src/execution/ast_check.py` parses only (no exec/eval). Deny: `eval`/`exec`/`__import__`; imports of `subprocess`, `socket`, `requests`, `http`, `urllib`; `os.system` / `os.popen` (including `import os as o`); relative imports; write-like calls whose literal path is absolute or contains `..` (including `Path.open('w')`: mode is args[0] on a non-module receiver; builtin/`builtins.open(file, mode)` still use args[1]). Dynamic paths, `importlib`, and `getattr` bypasses are not in this checker; 4.2 harvest still applies. Not wired to spawn (4.6).
 
 ### 4.4 SQL checks
 
@@ -646,6 +647,6 @@ Not current-step work and not code `# TODO`s. Revisit when the listed step runs.
 
 ## Current focus
 
-**4.2 done.** Next: **4.3 Python AST checks**.
-Do not start 4.3 until you say to proceed.
-Per-run work dir is deleted after the run. Only files that resolve inside it are copied into `ARTIFACT_DIR`. Not bound to chat.
+**4.3 done.** Next: **4.4 SQL checks**.
+Do not start 4.4 until you say to proceed.
+Generated Python is parsed and deny-listed before it would spawn. The checker is not bound to the runner or chat yet.
