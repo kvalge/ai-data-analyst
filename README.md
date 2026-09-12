@@ -29,8 +29,11 @@ and are not treated as datasets. Mode is session-only until the agent graph
 exists. Use **Preview** on a data source to see column types and a short
 sample (`SAMPLE_N_ROWS`); the full file is never loaded into the UI. Use
 **Profile selected source** for a bounded-head schema / data-quality / EDA
-summary (not a whole-file profile; the dataset is not shown). Preview and
-profile can both stay open; close either from its panel.
+summary (not a whole-file profile; the dataset is not shown). In **Guided**
+mode the profile pauses after schema, then data quality, then EDA
+(Continue / Skip remaining / Abort). Standard and Auto show all sections
+at once. Preview and profile can both stay open; close either from its
+panel.
 
 Optional Postgres: set `DB_NAME` and `DB_USER` in `.env` (and host/port/password
 as needed). The database **role must be read-only** — grant that in Postgres;

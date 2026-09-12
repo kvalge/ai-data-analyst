@@ -4,9 +4,19 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Iterable
 
 import streamlit as st
+
+from src.ui.profile_step import (
+    ACTION_ABORT,
+    ACTION_CONTINUE,
+    ACTION_SKIP_REMAINING,
+    PROFILE_SECTIONS,
+    SECTION_DQ,
+    SECTION_EDA,
+    SECTION_SCHEMA,
+)
 
 PROFILE_SOURCE_ID_KEY = "profile_source_id"
 SELECTED_SOURCE_ID_KEY = "selected_source_id"
@@ -135,8 +145,13 @@ def render_closable_heading(title: str, *, close_key: str) -> bool:
         return st.button("Close", key=close_key)
 
 
-def render_profile(result: dict[str, Any]) -> None:
-    """Show schema, DQ, and EDA from a profile_source result."""
+def render_profile(
+    result: dict[str, Any],
+    *,
+    sections: Iterable[str] = PROFILE_SECTIONS,
+) -> None:
+    """Show selected schema / DQ / EDA sections from a profile_source result."""
+    shown = tuple(sections)
     cached = "cached" if result["cached"] else "fresh"
     file_row_count = result["schema"].get("file_row_count")
     file_bit = (
@@ -148,9 +163,27 @@ def render_profile(result: dict[str, Any]) -> None:
         f"{cached} · {result['sample_row_count']} profiled row(s) · {file_bit}. "
         "Quick overview of a bounded head, not a whole-file profile."
     )
-    render_schema_section(result["schema"])
-    render_dq_section(result["dq"])
-    render_eda_section(result["eda"])
+    if SECTION_SCHEMA in shown:
+        render_schema_section(result["schema"])
+    if SECTION_DQ in shown:
+        render_dq_section(result["dq"])
+    if SECTION_EDA in shown:
+        render_eda_section(result["eda"])
+
+
+def render_guided_stepper() -> str | None:
+    """Continue, Skip remaining, or Abort. None if no button was clicked."""
+    continue_col, skip_col, abort_col = st.columns(3)
+    with continue_col:
+        if st.button("Continue", key="profile_continue"):
+            return ACTION_CONTINUE
+    with skip_col:
+        if st.button("Skip remaining", key="profile_skip_remaining"):
+            return ACTION_SKIP_REMAINING
+    with abort_col:
+        if st.button("Abort", key="profile_abort"):
+            return ACTION_ABORT
+    return None
 
 
 def render_schema_section(schema: dict[str, Any]) -> None:

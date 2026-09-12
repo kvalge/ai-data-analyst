@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission. Code `# TODO` / `# FIXME` comments are also listed under **Open TODOs (code)** below.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** Next step: **2.14**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** Next step: **3.1**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -283,9 +283,10 @@ Profiling is functions + cache. Guided pauses here are **Streamlit Continue butt
 
 ### 2.14 Guided stepper in UI
 
-- If mode is Guided: run schema → wait Continue → DQ → Continue → EDA.
-- Standard/Auto: run all, then show.
-- Skip remaining / abort buttons.
+- [x] If mode is Guided: show schema → wait Continue → DQ → Continue → EDA.
+- [x] Standard/Auto: run all, then show.
+- [x] Skip remaining / abort buttons.
+- `profile_source` still computes the compact summary in one pass; the stepper only reveals sections. Graph interrupts are 3.11.
 - **Done when:** Guided pauses; Standard does not. Still no LangGraph.
 
 ---
@@ -625,6 +626,6 @@ Not current-step work and not code `# TODO`s. Revisit when the listed step runs.
 
 ## Current focus
 
-**2.13 done.** Next: **2.14 Guided stepper in UI**.
-Do not start 2.14 until you say to proceed.
-Sidebar **Profile selected source** runs `profile_source` and renders schema / DQ / EDA. Bounded head only; no dataset rows; no Guided pause yet. Preview and profile stay independent; each panel has Close.
+**2.14 done.** Next: **3.1 Wrap existing tools in contracts**.
+Do not start 3.1 until you say to proceed.
+Guided profile pauses after schema, then DQ, then EDA (Continue / Skip remaining / Abort). Standard and Auto show all sections. Still no LangGraph.
