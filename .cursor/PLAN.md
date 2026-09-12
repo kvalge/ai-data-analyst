@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission. Code `# TODO` / `# FIXME` comments are also listed under **Open TODOs (code)** below.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** **3.12 done.** **3.13 done.** **4.1 done.** **4.2 done.** **4.3 done.** **4.4 done.** **4.5 done.** Next step: **4.6**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** **3.12 done.** **3.13 done.** **4.1 done.** **4.2 done.** **4.3 done.** **4.4 done.** **4.5 done.** **4.6 done.** Next step: **4.7**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -420,8 +420,9 @@ No sandbox code execution yet. Tools: `list_available_sources`, `read_file_sampl
 
 ### 4.6 `run_analysis_code` tool
 
-- AST check → sandbox → structured result: stdout + artifact paths (csv/png).
-- Tests with a fixture CSV copied into the work dir.
+- [x] AST check → sandbox → structured result: stdout + artifact paths (csv/png).
+- [x] Tests with a fixture CSV copied into the work dir.
+- Public args: `source_id`, `code`. File sources only. AST check runs before the work dir is created. The registered file is copied in under its original basename; the runner script is `_sandbox_run.py`. Non-zero exit raises `AnalysisCodeError` with stderr capped at `MAX_PROMPT_CHARS` (no artifact copy). Result lists only `.csv`/`.png` paths that resolve inside `ARTIFACT_DIR`. Stdout is capped at `MAX_PROMPT_CHARS`. Code and rows are not logged. HITL before execute is 4.8.
 
 ### 4.7 Code-generation path
 
@@ -649,6 +650,6 @@ Not current-step work and not code `# TODO`s. Revisit when the listed step runs.
 
 ## Current focus
 
-**4.5 done.** Next: **4.6 `run_analysis_code` tool**.
-Do not start 4.6 until you say to proceed.
-`query_database` runs one checked, parameterized SELECT/WITH against the enabled Postgres source and returns a bounded head. No live DB in default pytest.
+**4.6 done.** Next: **4.7 Code-generation path**.
+Do not start 4.7 until you say to proceed.
+`run_analysis_code` AST-checks Python, runs it in a subprocess with the source file in the work dir, and returns stdout plus csv/png artifact paths.

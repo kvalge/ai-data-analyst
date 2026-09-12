@@ -13,6 +13,7 @@ from src.tools.profile_source import PROFILE_SOURCE, profile_source
 from src.tools.query_database import QUERY_DATABASE, query_database
 from src.tools.read_sample import READ_FILE_SAMPLE, read_file_sample
 from src.tools.registry import TOOL_REGISTRY, RegisteredTool, build_tool_registry
+from src.tools.run_analysis_code import RUN_ANALYSIS_CODE, run_analysis_code
 
 _EXPECTED_HANDLERS = {
     LIST_AVAILABLE_SOURCES.name: list_available_sources,
@@ -20,6 +21,7 @@ _EXPECTED_HANDLERS = {
     PROFILE_SOURCE.name: profile_source,
     LOAD_FULL_FILE.name: load_full_file,
     QUERY_DATABASE.name: query_database,
+    RUN_ANALYSIS_CODE.name: run_analysis_code,
 }
 
 
@@ -30,7 +32,7 @@ def tool_registry() -> Mapping[str, RegisteredTool]:
 
 
 def test_phase_3_tool_names_are_registered(tool_registry: Mapping[str, RegisteredTool]):
-    """The allowlist is list, sample, profile, load_full_file, and query_database."""
+    """The allowlist includes query_database and run_analysis_code."""
     assert set(tool_registry) == set(_EXPECTED_HANDLERS)
 
 

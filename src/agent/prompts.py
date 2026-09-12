@@ -31,6 +31,8 @@ _TOOL_USE = (
     "Call load_full_file only when a sample is not enough. "
     "query_database runs one parameterized SELECT or WITH against the "
     "enabled Postgres source. "
+    "run_analysis_code runs checked Python in a sandbox. Save csv or png "
+    "in the work dir; do not print large tables. "
     'To call a tool, reply with a JSON object {"name": "<tool>", "arguments": {}}. '
     "To answer the user, reply with plain text, not a tool JSON object."
 )

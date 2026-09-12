@@ -4,7 +4,7 @@
 
 The agent (3.8) looks up tools here. This module does not run them or
 inject app arguments. Tools: list, sample, profile, load_full_file,
-query_database.
+query_database, run_analysis_code.
 """
 
 from __future__ import annotations
@@ -20,6 +20,7 @@ from src.tools.load_full_file import LOAD_FULL_FILE, load_full_file
 from src.tools.profile_source import PROFILE_SOURCE, profile_source
 from src.tools.query_database import QUERY_DATABASE, query_database
 from src.tools.read_sample import READ_FILE_SAMPLE, read_file_sample
+from src.tools.run_analysis_code import RUN_ANALYSIS_CODE, run_analysis_code
 
 ToolHandler = Callable[..., dict[str, Any]]
 
@@ -38,6 +39,7 @@ _TOOL_ENTRIES: tuple[tuple[ToolContract, ToolHandler], ...] = (
     (PROFILE_SOURCE, profile_source),
     (LOAD_FULL_FILE, load_full_file),
     (QUERY_DATABASE, query_database),
+    (RUN_ANALYSIS_CODE, run_analysis_code),
 )
 
 

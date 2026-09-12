@@ -232,4 +232,14 @@ def _injected_kwargs(
             "n_rows": settings.sample_n_rows,
             "connect": connect,
         }
+    if name == "run_analysis_code":
+        return {
+            "settings": settings,
+            "source_id": args["source_id"],
+            "code": args["code"],
+            "upload_dir": settings.upload_dir,
+            "artifact_dir": settings.artifact_dir,
+            "timeout_s": settings.sandbox_timeout_s,
+            "max_prompt_chars": settings.max_prompt_chars,
+        }
     raise ValueError(f"Unknown tool: {name}.")
