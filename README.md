@@ -24,7 +24,9 @@ sandbox are not bound yet.
   several are present with none selected, or the sample/schema is empty. In
   **Guided** mode it also pauses after schema, data quality, and EDA. A
   malformed tool JSON or unknown tool is retried once, then shown as an
-  error; the app does not invent a tool call.
+  error; the app does not invent a tool call. Successful tool use appends
+  one JSONL line under `data/logs/audit.jsonl` (tool, source_id, timestamp;
+  never file contents).
 
 ## What is not here yet
 

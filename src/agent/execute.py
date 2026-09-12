@@ -9,6 +9,11 @@ import logging
 from collections.abc import Mapping
 from typing import Any
 
+from src.agent.audit import (
+    append_tool_use,
+    default_audit_dir,
+    source_id_for_audit,
+)
 from src.agent.json_output import (
     STRICT_RETRY_INSTRUCTION,
     JsonParseError,
@@ -119,7 +124,13 @@ def run_allowlisted_tool(
         checked["name"], settings, checked["arguments"], include_postgres
     )
     _LOG.info("execute tool=%s", checked["name"])
-    return TOOL_REGISTRY[checked["name"]].handler(**kwargs)
+    result = TOOL_REGISTRY[checked["name"]].handler(**kwargs)
+    append_tool_use(
+        default_audit_dir(settings.upload_dir),
+        tool=checked["name"],
+        source_id=source_id_for_audit(checked["arguments"]),
+    )
+    return result
 
 
 def _validate_arg_types(payload: dict[str, Any], schema: Mapping[str, Any]) -> None:

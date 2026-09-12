@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission. Code `# TODO` / `# FIXME` comments are also listed under **Open TODOs (code)** below.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** **3.12 done.** Next step: **3.13**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** **3.12 done.** **3.13 done.** Next step: **4.1**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -378,8 +378,9 @@ No sandbox code execution yet. Tools: `list_available_sources`, `read_file_sampl
 
 ### 3.13 Audit log (minimal)
 
-- Append-only JSONL under `logs/`: source_id, tool name, timestamp (no full file contents).
-- Test: one line written on tool use.
+- [x] Append-only JSONL under `logs/`: source_id, tool name, timestamp (no full file contents).
+- [x] Test: one line written on tool use.
+- Path is `upload_dir.parent / logs / audit.jsonl` (default `data/logs`). Written after a successful `run_allowlisted_tool` only. Failed tools do not append. No `LOG_DIR` env var.
 
 ---
 
@@ -610,6 +611,7 @@ Mirrored from `# TODO` / `# FIXME` in the repo. Update this table in the same ch
 | `src/profiling/cache.py` | Postgres `sha256` is a connection fingerprint, not table contents; revisit invalidation in 2.11. |
 | `src/profiling/dq.py` | `_THOUSANDS` is US-style only (`1,234.56`); unverified against source data; European `1.234,56` is not flagged. |
 | `src/agent/state.py` | `as_artifact_path` does not yet require the path to resolve inside `ARTIFACT_DIR`. Enforce in 4.2 (sandbox copy); 7.x only displays. |
+| `src/agent/audit.py` | Audit mkdir/write failures raise after a successful tool result. In 8.4 catch them and log a warning instead. |
 
 ---
 
@@ -642,6 +644,6 @@ Not current-step work and not code `# TODO`s. Revisit when the listed step runs.
 
 ## Current focus
 
-**3.12 done.** Next: **3.13 Audit log (minimal)**.
-Do not start 3.13 until you say to proceed.
-After one strict retry, parse/tool-validation failures are a visible chat error. No invented tool call or assistant guess.
+**3.13 done.** Next: **4.1 Subprocess runner**.
+Do not start 4.1 until you say to proceed.
+Successful allowlisted tool use appends one JSONL line (`timestamp`, `tool`, `source_id`) under `data/logs/audit.jsonl`. No file contents.
