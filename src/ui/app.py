@@ -1,7 +1,7 @@
 # app.py
 # streamlit run src/ui/app.py
 
-"""Streamlit shell: HITL mode, uploads, preview, profile, and Postgres check."""
+"""Streamlit shell: HITL mode, uploads, preview, profile, chat, and Postgres."""
 
 from __future__ import annotations
 
@@ -26,6 +26,7 @@ from src.storage.registry import RegistryError
 from src.tools.list_sources import list_available_sources
 from src.tools.profile_source import ProfileError, profile_source
 from src.tools.read_sample import read_file_sample
+from src.ui.chat import render_chat
 from src.ui.hitl import HITL_MODE_KEY, HitlMode, ensure_hitl_mode, resolve_hitl_mode
 from src.ui.profile import (
     PROFILE_SOURCE_ID_KEY,
@@ -257,6 +258,10 @@ if preview_id:
 
 if not profile_id and not preview_id:
     st.info(
-        "Ask questions here after you add a data source. "
-        "Preview and profile can both stay open; close either from its panel."
+        "Preview and profile can both stay open; close either from its panel. "
+        "Chat is below. Data tools are not bound yet."
     )
+
+st.subheader("Chat")
+st.caption("Local Ollama only. Replies are plain text until tools are bound.")
+render_chat(settings)
