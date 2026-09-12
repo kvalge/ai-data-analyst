@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission. Code `# TODO` / `# FIXME` comments are also listed under **Open TODOs (code)** below.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** Next step: **2.13**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** Next step: **2.14**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -277,8 +277,9 @@ Profiling is functions + cache. Guided pauses here are **Streamlit Continue butt
 
 ### 2.13 Streamlit: show profile
 
-- Button “Profile selected source”; render schema / DQ / EDA from the tool result.
-- Manual check.
+- [x] Button “Profile selected source”; render schema / DQ / EDA from the tool result.
+- [x] Manual check.
+- Bounded-head overview (same `profile_source` as 2.11). Guided stepper is 2.14.
 
 ### 2.14 Guided stepper in UI
 
@@ -624,6 +625,6 @@ Not current-step work and not code `# TODO`s. Revisit when the listed step runs.
 
 ## Current focus
 
-**2.12 done.** Next: **2.13 Streamlit: show profile**.
-Do not start 2.13 until you say to proceed.
-`load_full_file` loads a registered file under row/byte caps and returns metadata only. Over the cap → `needs_approval`. Cheap CSV over-row is `row_count` (no pandas). Post-load over-row (xlsx/json) is `row_count_post_load`. Never returns row records.
+**2.13 done.** Next: **2.14 Guided stepper in UI**.
+Do not start 2.14 until you say to proceed.
+Sidebar **Profile selected source** runs `profile_source` and renders schema / DQ / EDA. Bounded head only; no dataset rows; no Guided pause yet. Preview and profile stay independent; each panel has Close.

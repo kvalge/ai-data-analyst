@@ -1,7 +1,7 @@
 # app.py
 # streamlit run src/ui/app.py
 
-"""Streamlit shell: HITL mode, uploads, preview, and optional Postgres check."""
+"""Streamlit shell: HITL mode, uploads, preview, profile, and Postgres check."""
 
 from __future__ import annotations
 
@@ -24,8 +24,17 @@ from src.storage.ingest import ingest_data_upload
 from src.storage.paths import ensure_runtime_dirs
 from src.storage.registry import RegistryError
 from src.tools.list_sources import list_available_sources
+from src.tools.profile_source import ProfileError, profile_source
 from src.tools.read_sample import read_file_sample
 from src.ui.hitl import HITL_MODE_KEY, HitlMode, ensure_hitl_mode
+from src.ui.profile import (
+    PROFILE_SOURCE_ID_KEY,
+    SELECTED_SOURCE_ID_KEY,
+    render_closable_heading,
+    render_profile,
+)
+
+PREVIEW_SOURCE_ID_KEY = "preview_source_id"
 from src.validation.context_files import CONTEXT_FILE_SUFFIXES
 from src.validation.data_files import DATA_FILE_SUFFIXES
 from src.validation.uploads import FileValidationError
@@ -118,12 +127,35 @@ with st.sidebar:
     )
     if not listed["sources"]:
         st.caption("No data sources yet.")
+    labels = {
+        row["source_id"]: f"{row['original_name']} ({row['kind']})"
+        for row in listed["sources"]
+    }
     for row in listed["sources"]:
         st.write(f"{row['original_name']} ({row['kind']}, `{row['source_id'][:20]}…`)")
         if row["kind"] == "file" and st.button(
             "Preview", key=f"preview-{row['source_id']}"
         ):
-            st.session_state.preview_source_id = row["source_id"]
+            st.session_state[PREVIEW_SOURCE_ID_KEY] = row["source_id"]
+    if listed["sources"]:
+        options = [row["source_id"] for row in listed["sources"]]
+        current = st.session_state.get(SELECTED_SOURCE_ID_KEY)
+        if current not in options:
+            st.session_state[SELECTED_SOURCE_ID_KEY] = options[0]
+        st.selectbox(
+            "Selected source",
+            options=options,
+            format_func=lambda source_id: labels[source_id],
+            key=SELECTED_SOURCE_ID_KEY,
+        )
+        if st.button("Profile selected source"):
+            st.session_state[PROFILE_SOURCE_ID_KEY] = st.session_state[
+                SELECTED_SOURCE_ID_KEY
+            ]
+            logging.getLogger(__name__).info(
+                "UI profile requested source_id=%s",
+                st.session_state[PROFILE_SOURCE_ID_KEY],
+            )
 
     st.subheader("Context files")
     context_listed = list_context_files(settings.context_dir)
@@ -132,9 +164,29 @@ with st.sidebar:
     for path in context_listed:
         st.write(path.name)
 
-preview_id = st.session_state.get("preview_source_id")
+profile_id = st.session_state.get(PROFILE_SOURCE_ID_KEY)
+if profile_id:
+    if render_closable_heading("Profile", close_key="close_profile"):
+        st.session_state.pop(PROFILE_SOURCE_ID_KEY, None)
+        st.rerun()
+    try:
+        result = profile_source(
+            upload_dir=settings.upload_dir,
+            cache_dir=settings.cache_dir,
+            n_rows=settings.sample_n_rows,
+            max_bytes=settings.max_upload_bytes,
+            source_id=profile_id,
+            settings=settings,
+        )
+        render_profile(result)
+    except (FileValidationError, ProfileError, RegistryError) as exc:
+        st.error(str(exc))
+
+preview_id = st.session_state.get(PREVIEW_SOURCE_ID_KEY)
 if preview_id:
-    st.subheader("Preview")
+    if render_closable_heading("Preview", close_key="close_preview"):
+        st.session_state.pop(PREVIEW_SOURCE_ID_KEY, None)
+        st.rerun()
     try:
         sample = read_file_sample(
             upload_dir=settings.upload_dir,
@@ -148,5 +200,9 @@ if preview_id:
         st.dataframe(sample["rows"], hide_index=True)
     except (FileValidationError, RegistryError) as exc:
         st.error(str(exc))
-else:
-    st.info("Ask questions here after you add a data source. Preview a file from the sidebar.")
+
+if not profile_id and not preview_id:
+    st.info(
+        "Ask questions here after you add a data source. "
+        "Preview and profile can both stay open; close either from its panel."
+    )
