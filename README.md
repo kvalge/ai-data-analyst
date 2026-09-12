@@ -82,4 +82,6 @@ From the repo root:
 .\venv\Scripts\pyright.exe
 ```
 
-Typecheck covers `src/` only. Tests stay flat under `tests/`.
+Typecheck covers `src/` only. Tests nest under `tests/` by `src/` package
+(`tests/agent/`, `tests/tools/`, …). Shared fixtures stay in
+`tests/conftest.py` and `tests/fixtures/`. `pytest` still runs everything.

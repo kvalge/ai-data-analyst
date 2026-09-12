@@ -22,6 +22,7 @@ Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 | MCP server | Not in v1. In-process MCP-shaped contracts only. |
 | Docker | Not in this plan. Phase 8 only documents when to revisit. |
 | Type checker | **pyright**, `basic` mode, **`src/` only**. No mypy, no strict mode, no pandas stubs, no CI/pre-commit hook in v1. Run by hand (`pyright`) like `pytest`. |
+| Test layout | Nested under `tests/` mirroring `src/` packages. Root `conftest.py`, `tests/fixtures/`, and `tests/tool_schema.py` stay shared. Default `pytest` still runs everything. |
 | File source registry | **One** `registry.json` in `UPLOAD_DIR`. Single-user local; no per-source sidecars. 1.7 also adds `list_file_sources()` (not the 1.8 tool) for round-trip tests. |
 | Context same-name upload | **Overwrite** the file in `CONTEXT_DIR`. Basename is the document identity (unlike hashed data sources). No auto-rename, no reject. |
 | Tool results | Success = plain dict matching `result_schema`. Failure = raise a domain exception. No per-tool ok/error wrapper. |

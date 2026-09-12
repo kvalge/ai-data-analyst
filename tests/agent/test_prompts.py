@@ -10,7 +10,7 @@ from src.agent.prompts import build_system_prompt
 from src.agent.state import HITL_MODE_AUTO, HITL_MODE_GUIDED, HITL_MODE_STANDARD
 from src.tools.registry import TOOL_REGISTRY
 
-_PROMPTS_PATH = Path(__file__).resolve().parents[1] / "src" / "agent" / "prompts.py"
+_PROMPTS_PATH = Path(__file__).resolve().parents[2] / "src" / "agent" / "prompts.py"
 
 
 def test_prompts_module_does_not_import_streamlit():

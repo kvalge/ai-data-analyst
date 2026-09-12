@@ -32,8 +32,8 @@ _PLACEHOLDER_MODELS = {
     "OLLAMA_MODEL_CODING": "placeholder-coding:tag",
 }
 
-_CHAT_PATH = Path(__file__).resolve().parents[1] / "src" / "ui" / "chat.py"
-_APP_PATH = Path(__file__).resolve().parents[1] / "src" / "ui" / "app.py"
+_CHAT_PATH = Path(__file__).resolve().parents[2] / "src" / "ui" / "chat.py"
+_APP_PATH = Path(__file__).resolve().parents[2] / "src" / "ui" / "app.py"
 
 
 @pytest.fixture

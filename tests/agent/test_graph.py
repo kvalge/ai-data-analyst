@@ -25,7 +25,7 @@ _PLACEHOLDER_MODELS = {
 }
 
 _THREAD = {"configurable": {"thread_id": "test-thread"}}
-_GRAPH_PATH = Path(__file__).resolve().parents[1] / "src" / "agent" / "graph.py"
+_GRAPH_PATH = Path(__file__).resolve().parents[2] / "src" / "agent" / "graph.py"
 
 
 @pytest.fixture
