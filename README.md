@@ -31,10 +31,12 @@ generated SQL/Python come later.
 
 ## What is not here yet
 
-SQL/Python approval interrupts come later. Context files are stored only.
-Postgres queries are one checked SELECT/WITH. Sandbox Python is
-AST-checked, then run in a subprocess; results are stdout plus csv/png
-paths, not row dumps.
+SQL/Python approval interrupts come later. Chat still has the primary
+model write SQL/Python tool arguments; a plan→coding-model helper
+validates generated code but is not in the graph yet. Context files
+are stored only. Postgres queries are one checked SELECT/WITH.
+Sandbox Python is AST-checked, then run in a subprocess; results are
+stdout plus csv/png paths, not row dumps.
 
 ## Requirements
 

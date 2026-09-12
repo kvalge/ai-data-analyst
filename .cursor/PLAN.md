@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission. Code `# TODO` / `# FIXME` comments are also listed under **Open TODOs (code)** below.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** **3.12 done.** **3.13 done.** **4.1 done.** **4.2 done.** **4.3 done.** **4.4 done.** **4.5 done.** **4.6 done.** Next step: **4.7**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** **3.12 done.** **3.13 done.** **4.1 done.** **4.2 done.** **4.3 done.** **4.4 done.** **4.5 done.** **4.6 done.** **4.7 done.** Next step: **4.8**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -426,9 +426,10 @@ No sandbox code execution yet. Tools: `list_available_sources`, `read_file_sampl
 
 ### 4.7 Code-generation path
 
-- Structured plan/JSON from **primary**; raw code from **coding** model only when the task is code (per spec).
-- Strip fences; then AST/SQL validate.
-- Mocked tests for role selection.
+- [x] Structured plan/JSON from **primary**; raw code from **coding** model only when the task is code (per spec).
+- [x] Strip fences; then AST/SQL validate.
+- [x] Mocked tests for role selection.
+- `generate_checked_code` in `src/agent/codegen.py`. Primary emits plan JSON (`kind` python|sql, `task`, optional rationale/source_id). Only those kinds call the coding model (`structured=False`). Unknown kind is a plan-schema failure (same one-shot primary retry as parse/schema). Fences stripped (any language tag). Then `check_python_ast` / `check_sql`. One strict retry on plan parse and on code check. Not wired into the graph (4.8). Does not execute.
 
 ### 4.8 HITL before execute (Standard + Guided)
 
@@ -650,6 +651,6 @@ Not current-step work and not code `# TODO`s. Revisit when the listed step runs.
 
 ## Current focus
 
-**4.6 done.** Next: **4.7 Code-generation path**.
-Do not start 4.7 until you say to proceed.
-`run_analysis_code` AST-checks Python, runs it in a subprocess with the source file in the work dir, and returns stdout plus csv/png artifact paths.
+**4.7 done.** Next: **4.8 HITL before execute (Standard + Guided)**.
+Do not start 4.8 until you say to proceed.
+`generate_checked_code` plans on the primary model and writes raw Python/SQL on the coding model, then AST/SQL-checks. Chat still has the primary write tool arguments.

@@ -31,6 +31,12 @@ from src.agent.profile_steps import (
     build_profile_interrupt,
     should_pause_profiling,
 )
+from src.agent.codegen import (
+    KIND_PYTHON,
+    KIND_SQL,
+    CodegenError,
+    generate_checked_code,
+)
 from src.agent.execute import (
     ToolValidationError,
     interpret_model_reply,
@@ -104,6 +110,10 @@ __all__ = [
     "should_pause_profiling",
     "build_graph",
     "build_prompt",
+    "KIND_PYTHON",
+    "KIND_SQL",
+    "CodegenError",
+    "generate_checked_code",
     "ToolValidationError",
     "interpret_model_reply",
     "parse_tool_call",

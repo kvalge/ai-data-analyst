@@ -20,7 +20,7 @@ STRICT_RETRY_INSTRUCTION = (
 )
 
 _FENCED = re.compile(
-    r"^```(?:json)?[ \t]*\r?\n(.*?)[ \t]*\r?\n?```$",
+    r"^```[A-Za-z0-9_+-]*[ \t]*\r?\n(.*?)[ \t]*\r?\n?```$",
     flags=re.IGNORECASE | re.DOTALL,
 )
 
@@ -38,7 +38,7 @@ class JsonSchemaError(JsonOutputError):
 
 
 def strip_markdown_fences(text: str) -> str:
-    """Remove a wrapping ``` or ```json fence. Other wrapping is left as-is."""
+    """Remove a wrapping markdown fence (optional language tag)."""
     stripped = text.strip()
     match = _FENCED.fullmatch(stripped)
     if match:

@@ -36,6 +36,12 @@ def test_strip_plain_fence():
     assert strip_markdown_fences(raw) == '{"name": "list_available_sources"}'
 
 
+def test_strip_language_tagged_fence():
+    """A ```python or ```sql wrapper is removed before AST/SQL checks."""
+    assert strip_markdown_fences("```python\nprint(1)\n```") == "print(1)"
+    assert strip_markdown_fences("```sql\nSELECT 1\n```") == "SELECT 1"
+
+
 def test_parse_fenced_json():
     """Fenced JSON loads and matches the schema."""
     raw = '```json\n{"name": "list_available_sources"}\n```'
