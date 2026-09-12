@@ -32,6 +32,7 @@ class AgentState(TypedDict):
     source_ids: list[str]
     profile_summary: dict[str, Any] | None
     pending_interrupt: dict[str, Any] | None
+    pending_tool: dict[str, Any] | None
     last_tool_result: dict[str, Any] | None
     artifacts: list[str]
     error: str | None
@@ -47,6 +48,7 @@ def empty_agent_state(*, hitl_mode: str = HITL_MODE_STANDARD) -> AgentState:
         "source_ids": [],
         "profile_summary": None,
         "pending_interrupt": None,
+        "pending_tool": None,
         "last_tool_result": None,
         "artifacts": [],
         "error": None,

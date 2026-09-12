@@ -24,6 +24,7 @@ def test_empty_state_has_plan_keys():
         "source_ids",
         "profile_summary",
         "pending_interrupt",
+        "pending_tool",
         "last_tool_result",
         "artifacts",
         "error",
@@ -61,6 +62,7 @@ def test_empty_state_optional_payloads_are_none():
     state = empty_agent_state()
     assert state["profile_summary"] is None
     assert state["pending_interrupt"] is None
+    assert state["pending_tool"] is None
     assert state["last_tool_result"] is None
     assert state["error"] is None
 

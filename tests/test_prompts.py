@@ -38,6 +38,13 @@ def test_prompt_forbids_inventing_tools():
     assert "Do not invent a tool name" in text
 
 
+def test_prompt_describes_tool_json_shape():
+    """A tool call is a JSON object; a user answer is plain text."""
+    text = build_system_prompt(hitl_mode=HITL_MODE_STANDARD)
+    assert '{"name": "<tool>", "arguments": {}}' in text
+    assert "plain text" in text
+
+
 def test_prompt_lists_registered_tools():
     """Every Phase 3 registry name appears so the allowlist stays in sync."""
     text = build_system_prompt(hitl_mode=HITL_MODE_STANDARD)

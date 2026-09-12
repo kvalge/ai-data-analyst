@@ -13,6 +13,7 @@ from src.agent.json_output import (
     parse_json_output,
     strip_markdown_fences,
 )
+from src.agent.execute import parse_tool_call, run_allowlisted_tool
 from src.agent.graph import CompleteFn, build_graph, build_prompt
 from src.agent.llm import (
     ROLE_AGENTIC,
@@ -64,4 +65,6 @@ __all__ = [
     "CompleteFn",
     "build_graph",
     "build_prompt",
+    "parse_tool_call",
+    "run_allowlisted_tool",
 ]

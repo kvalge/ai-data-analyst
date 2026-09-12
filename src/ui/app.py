@@ -259,9 +259,9 @@ if preview_id:
 if not profile_id and not preview_id:
     st.info(
         "Preview and profile can both stay open; close either from its panel. "
-        "Chat is below. Data tools are not bound yet."
+        "Chat is below. The model may list, sample, profile, or load a file."
     )
 
 st.subheader("Chat")
-st.caption("Local Ollama only. Replies are plain text until tools are bound.")
+st.caption("Local Ollama only. The model may call list, sample, profile, or load.")
 render_chat(settings)

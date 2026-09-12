@@ -1,6 +1,6 @@
 # test_graph.py
 
-"""Tests for the tools-off LangGraph stub with a mocked LLM."""
+"""Tests for the LangGraph agent with mocked LLM and allowlisted tools."""
 
 from __future__ import annotations
 
@@ -43,7 +43,7 @@ def _user_turn(text: str) -> AgentState:
 
 
 def test_agent_appends_plain_text_reply(settings: Settings):
-    """The agent node appends an assistant text message. Tools stay off."""
+    """A plain-text model reply skips execute_tool."""
 
     def fake_complete(prompt: str, **kwargs: Any) -> str:
         return "plain reply"
@@ -137,6 +137,59 @@ def test_memory_saver_keeps_thread_history(settings: Settings):
 
 
 def test_graph_module_does_not_import_streamlit():
-    """Chat wiring stays out of this module until 3.7."""
+    """Chat wiring stays out of this module."""
     source = _GRAPH_PATH.read_text(encoding="utf-8")
     assert "streamlit" not in source.lower()
+
+
+def test_list_available_sources_runs_then_replies(
+    settings: Settings, tmp_path, sample_sales_csv: Path
+):
+    """A mocked tool JSON runs list_available_sources, then a text reply."""
+    from src.storage.registry import save_file_source
+
+    upload_dir = settings.upload_dir
+    incoming = tmp_path / "sales.csv"
+    incoming.write_bytes(sample_sales_csv.read_bytes())
+    saved = save_file_source(incoming, upload_dir, original_name="sales.csv")
+    replies = [
+        '{"name": "list_available_sources", "arguments": {}}',
+        "There is 1 source.",
+    ]
+    prompts: list[str] = []
+
+    def fake_complete(prompt: str, **kwargs: Any) -> str:
+        prompts.append(prompt)
+        return replies.pop(0)
+
+    graph = build_graph(settings=settings, complete_fn=fake_complete)
+    result = graph.invoke(_user_turn("what sources do I have?"), _THREAD)
+    assert "Last tool result" in prompts[1]
+    assert saved.source_id in prompts[1]
+    assert result["error"] is None
+    assert result["pending_tool"] is None
+    sources = result["last_tool_result"]["sources"]
+    assert len(sources) == 1
+    assert sources[0]["source_id"] == saved.source_id
+    assert "date,region,revenue" not in str(result["last_tool_result"])
+    assert result["messages"][-1] == {
+        "role": "assistant",
+        "content": "There is 1 source.",
+    }
+
+
+def test_failed_tool_is_visible_without_a_second_llm_call(settings: Settings):
+    """A domain tool error ends the turn. The model does not invent a result."""
+    calls = 0
+
+    def fake_complete(prompt: str, **kwargs: Any) -> str:
+        nonlocal calls
+        calls += 1
+        return '{"name": "read_file_sample", "arguments": {}}'
+
+    graph = build_graph(settings=settings, complete_fn=fake_complete)
+    result = graph.invoke(_user_turn("show a sample"), _THREAD)
+    assert calls == 1
+    assert result["error"] == "Provide exactly one of source_id or path."
+    assert result["last_tool_result"] is None
+    assert [m["role"] for m in result["messages"]] == ["user"]

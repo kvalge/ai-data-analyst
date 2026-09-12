@@ -7,9 +7,9 @@ point at a read-only Postgres database, inspect it, and ask questions in chat.
 All LLM inference runs on your machine through **Ollama**. Sensitive rows are
 not sent to hosted APIs, and Ollama `:cloud` models are rejected.
 
-The app is a Streamlit shell around a LangGraph agent. Chat is live; data tools
-are not bound to the agent yet. Profiling is a sidebar action, not something
-the model can call on its own.
+The app is a Streamlit shell around a LangGraph agent. Chat can ask the model
+to list, sample, profile, or load a file. Query, generated code, and the
+sandbox are not bound yet.
 
 ## What you can do now
 
@@ -19,13 +19,13 @@ the model can call on its own.
 - **Preview** a file: column types and a short sample (`SAMPLE_N_ROWS`)
 - **Profile** a file: bounded-head schema, data-quality, and EDA (cached;
   not a whole-file profile; the dataset is not shown)
-- **Chat** with the local primary model (plain-text replies)
+- **Chat** with the local primary model (it may call list / sample / profile /
+  load_full_file)
 
 ## What is not here yet
 
-Chat cannot list, sample, profile, query, or run analysis code. Generated
-SQL/Python and the sandbox come later. Context files are stored only; there
-is no RAG retrieval yet.
+Chat cannot query Postgres or run generated SQL/Python. The sandbox and RAG
+retrieval come later. Context files are stored only.
 
 ## Requirements
 

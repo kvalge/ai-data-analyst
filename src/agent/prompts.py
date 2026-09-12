@@ -28,7 +28,9 @@ _TOOL_USE = (
     "Use only the tools provided for this turn. Do not invent a tool name. "
     "If a tool fails or arguments are invalid, do not guess a result. "
     "profile_source is a bounded-head overview, not an exact whole-file profile. "
-    "Call load_full_file only when a sample is not enough."
+    "Call load_full_file only when a sample is not enough. "
+    'To call a tool, reply with a JSON object {"name": "<tool>", "arguments": {}}. '
+    "To answer the user, reply with plain text, not a tool JSON object."
 )
 
 _OUTPUT = (

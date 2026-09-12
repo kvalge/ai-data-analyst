@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission. Code `# TODO` / `# FIXME` comments are also listed under **Open TODOs (code)** below.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** Next step: **3.8**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** Next step: **3.9**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -317,7 +317,7 @@ No sandbox code execution yet. Tools: `list_available_sources`, `read_file_sampl
 
 ### 3.4 Agent state
 
-- [x] `src/agent/state.py` TypedDict: `messages`, `hitl_mode`, `source_ids`, `profile_summary`, `pending_interrupt`, `last_tool_result`, `artifacts` (paths only), `error`.
+- [x] `src/agent/state.py` TypedDict: `messages`, `hitl_mode`, `source_ids`, `profile_summary`, `pending_interrupt`, `pending_tool`, `last_tool_result`, `artifacts` (paths only), `error`.
 - [x] No dataframes in state.
 - HITL mode strings match the UI labels; `empty_agent_state` does not import Streamlit.
 
@@ -343,9 +343,11 @@ No sandbox code execution yet. Tools: `list_available_sources`, `read_file_sampl
 
 ### 3.8 Bind data tools to the agent
 
-- Agent may call list / sample / profile / load_full_file.
-- `execute_tool` node + allowlist.
-- Mocked test: model asks `list_available_sources` → tool runs → reply.
+- [x] Agent may call list / sample / profile / load_full_file.
+- [x] `execute_tool` node + allowlist.
+- [x] Mocked test: model asks `list_available_sources` → tool runs → reply.
+- App paths/limits are injected from `Settings`. Unknown tool or bad JSON shape fails visibly; retry policy is 3.9.
+- Agent dispatch addresses files by `source_id` only. `read_file_sample`'s `path` stays on the handler for tests; whether it stays in the public schema is 3.9.
 
 ### 3.9 Validate tool name and arguments
 
@@ -635,6 +637,6 @@ Not current-step work and not code `# TODO`s. Revisit when the listed step runs.
 
 ## Current focus
 
-**3.7 done.** Next: **3.8 Bind data tools to the agent**.
-Do not start 3.8 until you say to proceed.
-Main-area chat sends user text into the stub graph. System prompt stays in `prompts.py`.
+**3.8 done.** Next: **3.9 Validate tool name and arguments**.
+Do not start 3.9 until you say to proceed.
+`execute_tool` runs only `TOOL_REGISTRY` names. LLM JSON `{"name", "arguments"}` routes there; plain text ends the turn.

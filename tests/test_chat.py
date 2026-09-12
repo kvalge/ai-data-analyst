@@ -45,7 +45,7 @@ def settings(tmp_path) -> Settings:
 
 @pytest.fixture
 def graph(settings: Settings):
-    """A tools-off graph with a mocked LLM."""
+    """A graph with a mocked LLM that replies in plain text."""
 
     def fake_complete(prompt: str, **kwargs: Any) -> str:
         return "plain reply"
