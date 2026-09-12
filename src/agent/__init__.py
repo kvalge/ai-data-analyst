@@ -1,6 +1,6 @@
 # __init__.py
 
-"""Agent orchestration: parse helpers, local Ollama client, and graph state."""
+"""Agent orchestration: parse helpers, local Ollama client, state, and prompts."""
 
 from src.agent.json_output import (
     FAIL,
@@ -22,6 +22,7 @@ from src.agent.llm import (
     complete,
     model_for_role,
 )
+from src.agent.prompts import build_system_prompt
 from src.agent.state import (
     ALLOWED_HITL_MODES,
     HITL_MODE_AUTO,
@@ -58,4 +59,5 @@ __all__ = [
     "AgentState",
     "as_artifact_path",
     "empty_agent_state",
+    "build_system_prompt",
 ]
