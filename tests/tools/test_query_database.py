@@ -17,42 +17,11 @@ from src.db.postgres import DatabaseError
 from src.execution.sql_check import SqlCheckError
 from src.storage.sources import postgres_source_id
 from src.tools.query_database import QUERY_DATABASE, query_database
+from tests.db.fake_postgres import FakeConnection, FakeCursor
 from tests.tool_schema import assert_keys_match_required
 
 _SELECT = "SELECT date, region, revenue FROM sales WHERE region = $1"
 _SALES_ROW = ("2024-01-01", "North", 10.0)
-
-
-class _Column:
-    def __init__(self, name: str) -> None:
-        self.name = name
-
-
-class _FakeCursor:
-    def __init__(self, rows: list[tuple[object, ...]]) -> None:
-        self.description = (_Column("date"), _Column("region"), _Column("revenue"))
-        self._rows = rows
-        self.sql: str | None = None
-        self.params: object = None
-
-    def fetchmany(self, size: int) -> list[tuple[object, ...]]:
-        return self._rows[:size]
-
-
-class _FakeConnection:
-    def __init__(self, cursor: _FakeCursor) -> None:
-        self._cursor = cursor
-
-    def __enter__(self) -> _FakeConnection:
-        return self
-
-    def __exit__(self, *_exc: object) -> None:
-        return None
-
-    def execute(self, sql: str, params: object = ()) -> _FakeCursor:
-        self._cursor.sql = sql
-        self._cursor.params = params
-        return self._cursor
 
 
 def _settings(tmp_path: Path):
@@ -70,11 +39,11 @@ def _settings(tmp_path: Path):
     )
 
 
-def _run(tmp_path: Path, *, sql: str, cursor: _FakeCursor, **kwargs: object):
+def _run(tmp_path: Path, *, sql: str, cursor: FakeCursor, **kwargs: object):
     settings = _settings(tmp_path)
-    connection = _FakeConnection(cursor)
+    connection = FakeConnection(cursor)
 
-    def fake_connect(**_kw: object) -> _FakeConnection:
+    def fake_connect(**_kw: object) -> FakeConnection:
         return connection
 
     return query_database(
@@ -90,7 +59,7 @@ def _run(tmp_path: Path, *, sql: str, cursor: _FakeCursor, **kwargs: object):
 
 def test_select_returns_bounded_rows(tmp_path: Path):
     """A checked SELECT returns columns and a bounded head, not a dump."""
-    cursor = _FakeCursor([_SALES_ROW, ("2024-01-02", "South", 5.0)])
+    cursor = FakeCursor([_SALES_ROW, ("2024-01-02", "South", 5.0)])
     result = _run(tmp_path, sql=_SELECT, cursor=cursor, params=["North"])
     assert result["columns"] == ["date", "region", "revenue"]
     assert result["row_count"] == 2
@@ -104,7 +73,7 @@ def test_select_returns_bounded_rows(tmp_path: Path):
 
 def test_extra_row_is_truncated(tmp_path: Path):
     """Fetching past n_rows marks truncated and drops the extra row."""
-    cursor = _FakeCursor(
+    cursor = FakeCursor(
         [
             _SALES_ROW,
             ("2024-01-02", "South", 5.0),
@@ -219,10 +188,10 @@ def test_query_database_audit_line_has_connection_id_not_sql(tmp_path: Path):
     """run_allowlisted_tool injects connect and writes identities only."""
     settings = _settings(tmp_path)
     connection_id = postgres_source_id(settings)
-    cursor = _FakeCursor([_SALES_ROW])
-    connection = _FakeConnection(cursor)
+    cursor = FakeCursor([_SALES_ROW])
+    connection = FakeConnection(cursor)
 
-    def injected_connect(**_kw: object) -> _FakeConnection:
+    def injected_connect(**_kw: object) -> FakeConnection:
         return connection
 
     def llm_connect(**_kw: object) -> None:

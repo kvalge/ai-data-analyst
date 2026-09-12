@@ -6,12 +6,21 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Callable
 from typing import Any, Protocol
 
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import interrupt
 
+from src.agent.code_approval import (
+    CODE_TOOLS,
+    apply_code_decision,
+    build_code_interrupt,
+    generated_code_text,
+    should_pause_generated_code,
+    source_id_for_code_tool,
+)
 from src.agent.confirm_sources import (
     ACTION_SELECT,
     REASON_EMPTY_SCHEMA,
@@ -140,8 +149,12 @@ def build_graph(
     settings: Settings,
     complete_fn: CompleteFn | None = None,
     include_postgres: bool = False,
+    connect: Callable[..., Any] | None = None,
 ) -> Any:
-    """Compile START → confirm_sources → profile nodes → agent ⇄ execute_tool."""
+    """Compile START → confirm_sources → profile nodes → agent ⇄ execute_tool.
+
+    `connect` is a test seam for query_database. The LLM cannot supply it.
+    """
     completer = complete_fn or complete
 
     def _selected_source_id(state: AgentState) -> str | None:
@@ -359,12 +372,35 @@ def build_graph(
         arguments = pending.get("arguments")
         if not isinstance(arguments, dict):
             arguments = {}
+        if name in CODE_TOOLS and should_pause_generated_code(
+            str(state.get("hitl_mode") or "")
+        ):
+            text = generated_code_text(name, arguments)
+            if not text:
+                return {"error": "Generated code is empty.", "pending_tool": None}
+            _LOG.info("graph approve_code interrupt tool=%s", name)
+            applied = apply_code_decision(
+                interrupt(
+                    build_code_interrupt(
+                        tool=name,
+                        code=text,
+                        source_id=source_id_for_code_tool(name, arguments),
+                    )
+                ),
+                name=name,
+                arguments=arguments,
+            )
+            if applied.get("error"):
+                return {"error": applied["error"], "pending_tool": None}
+            next_args = applied.get("arguments")
+            arguments = next_args if isinstance(next_args, dict) else {}
         try:
             result = run_allowlisted_tool(
                 name,
                 arguments,
                 settings,
                 include_postgres=include_postgres,
+                connect=connect,
             )
         except Exception as exc:
             _LOG.info("graph tool failed name=%s", name)

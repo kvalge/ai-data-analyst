@@ -31,6 +31,15 @@ from src.agent.profile_steps import (
     build_profile_interrupt,
     should_pause_profiling,
 )
+from src.agent.code_approval import (
+    ACTION_APPROVE,
+    ACTION_EDIT_RUN,
+    ACTION_REJECT,
+    KIND_APPROVE_CODE,
+    apply_code_decision,
+    build_code_interrupt,
+    should_pause_generated_code,
+)
 from src.agent.codegen import (
     KIND_PYTHON,
     KIND_SQL,
@@ -100,10 +109,17 @@ __all__ = [
     "ACTION_CONTINUE",
     "ACTION_SELECT",
     "ACTION_SKIP_REMAINING",
+    "KIND_APPROVE_CODE",
     "KIND_CONFIRM_SOURCES",
     "KIND_PROFILE_STEP",
+    "ACTION_APPROVE",
+    "ACTION_EDIT_RUN",
+    "ACTION_REJECT",
+    "apply_code_decision",
     "apply_confirm_decision",
     "apply_profile_decision",
+    "build_code_interrupt",
+    "should_pause_generated_code",
     "build_interrupt_payload",
     "build_profile_interrupt",
     "decide_confirm_reason",

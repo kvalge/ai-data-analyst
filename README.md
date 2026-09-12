@@ -9,8 +9,8 @@ not sent to hosted APIs, and Ollama `:cloud` models are rejected.
 
 The app is a Streamlit shell around a LangGraph agent. Chat can ask the model
 to list, sample, profile, load a file, run a checked read-only SQL query,
-or run checked Python in a local sandbox. Approval interrupts for
-generated SQL/Python come later.
+or run checked Python in a local sandbox. Standard and Guided pause
+before generated SQL or Python; Approve runs it, Reject does not.
 
 ## What you can do now
 
@@ -23,7 +23,9 @@ generated SQL/Python come later.
 - **Chat** with the local primary model (it may call list / sample / profile /
   load_full_file, query_database, or run_analysis_code). Chat pauses to confirm the source when none are registered,
   several are present with none selected, or the sample/schema is empty. In
-  **Guided** mode it also pauses after schema, data quality, and EDA. A
+  **Guided** mode it also pauses after schema, data quality, and EDA.
+  Standard and Guided also pause before `run_analysis_code` or
+  `query_database` (Approve or Reject; an editable textarea comes later). A
   malformed tool JSON or unknown tool is retried once, then shown as an
   error; the app does not invent a tool call. Successful tool use appends
   one JSONL line under `data/logs/audit.jsonl` (tool, source_id, timestamp;
@@ -31,12 +33,12 @@ generated SQL/Python come later.
 
 ## What is not here yet
 
-SQL/Python approval interrupts come later. Chat still has the primary
-model write SQL/Python tool arguments; a plan→coding-model helper
-validates generated code but is not in the graph yet. Context files
-are stored only. Postgres queries are one checked SELECT/WITH.
-Sandbox Python is AST-checked, then run in a subprocess; results are
-stdout plus csv/png paths, not row dumps.
+The editable code textarea and Auto-mode skip of the code interrupt
+come later. Chat still has the primary model write SQL/Python tool
+arguments; a plan→coding-model helper validates generated code but is
+not in the graph yet. Context files are stored only. Postgres queries
+are one checked SELECT/WITH. Sandbox Python is AST-checked, then run
+in a subprocess; results are stdout plus csv/png paths, not row dumps.
 
 ## Requirements
 

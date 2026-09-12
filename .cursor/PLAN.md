@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission. Code `# TODO` / `# FIXME` comments are also listed under **Open TODOs (code)** below.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** **3.12 done.** **3.13 done.** **4.1 done.** **4.2 done.** **4.3 done.** **4.4 done.** **4.5 done.** **4.6 done.** **4.7 done.** Next step: **4.8**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** **3.12 done.** **3.13 done.** **4.1 done.** **4.2 done.** **4.3 done.** **4.4 done.** **4.5 done.** **4.6 done.** **4.7 done.** **4.8 done.** Next step: **4.9**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -433,9 +433,10 @@ No sandbox code execution yet. Tools: `list_available_sources`, `read_file_sampl
 
 ### 4.8 HITL before execute (Standard + Guided)
 
-- Interrupt payload: code, source_id, short rationale.
-- Resume: approve / edit+run / reject (reject must not execute).
-- Mocked graph tests.
+- [x] Interrupt payload: code, source_id, short rationale.
+- [x] Resume: approve / edit+run / reject (reject must not execute).
+- [x] Mocked graph tests.
+- `execute_tool` pauses for `run_analysis_code` / `query_database` in Standard and Guided (`src/agent/code_approval.py`). Payload kind `approve_code`. Reject and unknown actions set error and do not call the tool. `edit_run` replaces `code` or `sql` (fences stripped). Graph tests cover Python and SQL (`query_database` via mocked `connect`). Chat widgets live in `src/ui/code_review.py` (Approve / Reject); editable textarea is 4.11. Auto skip is 4.9. Codegen still not wired.
 
 ### 4.9 Auto mode skips code interrupt
 
@@ -651,6 +652,6 @@ Not current-step work and not code `# TODO`s. Revisit when the listed step runs.
 
 ## Current focus
 
-**4.7 done.** Next: **4.8 HITL before execute (Standard + Guided)**.
-Do not start 4.8 until you say to proceed.
-`generate_checked_code` plans on the primary model and writes raw Python/SQL on the coding model, then AST/SQL-checks. Chat still has the primary write tool arguments.
+**4.8 done.** Next: **4.9 Auto mode skips code interrupt**.
+Do not start 4.9 until you say to proceed.
+Standard and Guided pause before `run_analysis_code` / `query_database`. Approve runs; edit_run replaces the text; reject does not execute.
