@@ -218,7 +218,9 @@ def render_chat(
             )
         elif kind == KIND_APPROVE_CODE:
             decision = render_code_review(pending)
-            caption = "Approve or reject generated SQL or Python before chatting."
+            caption = (
+                "Edit, approve, or reject generated SQL or Python before chatting."
+            )
         elif kind == KIND_APPROVE_LOAD:
             decision = render_load_pause(pending)
             caption = "Approve or reject an over-limit full-file load before chatting."

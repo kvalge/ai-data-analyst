@@ -10,7 +10,8 @@ not sent to hosted APIs, and Ollama `:cloud` models are rejected.
 The app is a Streamlit shell around a LangGraph agent. Chat can ask the model
 to list, sample, profile, load a file, run a checked read-only SQL query,
 or run checked Python in a local sandbox. Standard and Guided pause
-before generated SQL or Python; Approve runs it, Reject does not.
+before generated SQL or Python; you can edit the text, Approve runs
+it in the sandbox, Reject does not.
 Auto runs it without asking; the tool-use audit line is still written.
 
 ## What you can do now
@@ -26,7 +27,7 @@ Auto runs it without asking; the tool-use audit line is still written.
   several are present with none selected, or the sample/schema is empty. In
   **Guided** mode it also pauses after schema, data quality, and EDA.
   Standard and Guided also pause before `run_analysis_code` or
-  `query_database` (Approve or Reject; an editable textarea comes later).
+  `query_database` (editable textarea; Approve or Reject).
   **Auto** runs that generated SQL or Python without pausing; the audit
   line is still written. Every mode pauses before an over-limit
   `load_full_file` (Approve loads anyway; Reject does not). A
@@ -37,13 +38,11 @@ Auto runs it without asking; the tool-use audit line is still written.
 
 ## What is not here yet
 
-The editable code textarea comes later. Over-limit full-file loads
-already pause in the graph. Chat still has the primary
-model write SQL/Python tool arguments; a plan→coding-model helper
-validates generated code but is not in the graph yet. Context files
-are stored only. Postgres queries are one checked SELECT/WITH.
-Sandbox Python is AST-checked, then run in a subprocess; results are
-stdout plus csv/png paths, not row dumps.
+Chat still has the primary model write SQL/Python tool arguments; a
+plan→coding-model helper validates generated code but is not in the
+graph yet. Context files are stored only. Postgres queries are one
+checked SELECT/WITH. Sandbox Python is AST-checked, then run in a
+subprocess; results are stdout plus csv/png paths, not row dumps.
 
 ## Requirements
 
