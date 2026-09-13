@@ -8,6 +8,10 @@ from src.tools.load_full_file import LOAD_FULL_FILE, load_full_file
 from src.tools.profile_source import PROFILE_SOURCE, ProfileError, profile_source
 from src.tools.query_database import QUERY_DATABASE, query_database
 from src.tools.read_sample import READ_FILE_SAMPLE, read_file_sample
+from src.tools.retrieve_domain_context import (
+    RETRIEVE_DOMAIN_CONTEXT,
+    retrieve_domain_context,
+)
 from src.tools.run_analysis_code import (
     RUN_ANALYSIS_CODE,
     AnalysisCodeError,
@@ -22,6 +26,7 @@ __all__ = [
     "ProfileError",
     "QUERY_DATABASE",
     "READ_FILE_SAMPLE",
+    "RETRIEVE_DOMAIN_CONTEXT",
     "RUN_ANALYSIS_CODE",
     "AnalysisCodeError",
     "RegisteredTool",
@@ -33,5 +38,6 @@ __all__ = [
     "profile_source",
     "query_database",
     "read_file_sample",
+    "retrieve_domain_context",
     "run_analysis_code",
 ]

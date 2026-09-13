@@ -32,6 +32,13 @@ def test_prompt_forbids_dumping_full_data():
     assert "Never dump a full dataset" in text
 
 
+def test_prompt_says_retrieve_skips_data_files():
+    """Domain retrieve is for context documents, not uploaded tables."""
+    text = build_system_prompt(hitl_mode=HITL_MODE_STANDARD)
+    assert "retrieve_domain_context looks up uploaded domain-context" in text
+    assert "It does not search data files" in text
+
+
 def test_prompt_tells_model_to_reuse_artifact_paths():
     """Follow-ups should reuse listed artifact files, not invent paths."""
     text = build_system_prompt(hitl_mode=HITL_MODE_STANDARD)
@@ -53,7 +60,7 @@ def test_prompt_describes_tool_json_shape():
 
 
 def test_prompt_lists_registered_tools():
-    """Every Phase 3 registry name appears so the allowlist stays in sync."""
+    """Every registered tool name appears so the allowlist stays in sync."""
     text = build_system_prompt(hitl_mode=HITL_MODE_STANDARD)
     for name in TOOL_REGISTRY:
         assert name in text

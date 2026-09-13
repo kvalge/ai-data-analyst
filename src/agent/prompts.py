@@ -33,6 +33,8 @@ _TOOL_USE = (
     "enabled Postgres source. "
     "run_analysis_code runs checked Python in a sandbox. Save csv or png "
     "in the work dir; do not print large tables. "
+    "retrieve_domain_context looks up uploaded domain-context documents. "
+    "It does not search data files. "
     "When the prompt lists artifact paths, reuse those files for follow-up "
     "analysis. Do not invent artifact paths. "
     'To call a tool, reply with a JSON object {"name": "<tool>", "arguments": {}}. '

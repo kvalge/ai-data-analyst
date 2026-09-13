@@ -1,6 +1,6 @@
 # test_tool_registry.py
 
-"""Tests that every registered Phase 3 tool has a contract and handler."""
+"""Tests that every registered tool has a contract and handler."""
 
 from collections.abc import Mapping
 from typing import Any, cast
@@ -13,6 +13,10 @@ from src.tools.profile_source import PROFILE_SOURCE, profile_source
 from src.tools.query_database import QUERY_DATABASE, query_database
 from src.tools.read_sample import READ_FILE_SAMPLE, read_file_sample
 from src.tools.registry import TOOL_REGISTRY, RegisteredTool, build_tool_registry
+from src.tools.retrieve_domain_context import (
+    RETRIEVE_DOMAIN_CONTEXT,
+    retrieve_domain_context,
+)
 from src.tools.run_analysis_code import RUN_ANALYSIS_CODE, run_analysis_code
 
 _EXPECTED_HANDLERS = {
@@ -22,6 +26,7 @@ _EXPECTED_HANDLERS = {
     LOAD_FULL_FILE.name: load_full_file,
     QUERY_DATABASE.name: query_database,
     RUN_ANALYSIS_CODE.name: run_analysis_code,
+    RETRIEVE_DOMAIN_CONTEXT.name: retrieve_domain_context,
 }
 
 
@@ -31,8 +36,10 @@ def tool_registry() -> Mapping[str, RegisteredTool]:
     return build_tool_registry()
 
 
-def test_phase_3_tool_names_are_registered(tool_registry: Mapping[str, RegisteredTool]):
-    """The allowlist includes query_database and run_analysis_code."""
+def test_registered_tool_names_match_allowlist(
+    tool_registry: Mapping[str, RegisteredTool],
+):
+    """The registry names match the expected allowlist."""
     assert set(tool_registry) == set(_EXPECTED_HANDLERS)
 
 

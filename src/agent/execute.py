@@ -1,6 +1,6 @@
 # execute.py
 
-"""Run allowlisted Phase 3 tools. App paths and limits come from settings."""
+"""Run allowlisted tools. App paths and limits come from settings."""
 
 from __future__ import annotations
 
@@ -26,6 +26,7 @@ from src.agent.json_output import (
     validate_json_object,
 )
 from src.config import Settings
+from src.rag import DEFAULT_TOP_K
 from src.tools.registry import TOOL_REGISTRY
 
 _LOG = logging.getLogger(__name__)
@@ -42,6 +43,7 @@ _APP_ARG_KEYS = frozenset(
         "connect",
         "allow_over_limit",
         "decision",
+        "context_dir",
     }
 )
 
@@ -280,5 +282,12 @@ def _injected_kwargs(
             "artifact_dir": settings.artifact_dir,
             "timeout_s": settings.sandbox_timeout_s,
             "max_prompt_chars": settings.max_prompt_chars,
+        }
+    if name == "retrieve_domain_context":
+        return {
+            "query": args["query"],
+            "context_dir": settings.context_dir,
+            "max_bytes": settings.max_upload_bytes,
+            "top_k": int(args.get("top_k", DEFAULT_TOP_K)),
         }
     raise ValueError(f"Unknown tool: {name}.")

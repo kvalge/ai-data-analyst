@@ -1,6 +1,6 @@
 # context.py
 
-"""Store business-context documents in CONTEXT_DIR. No RAG in this step."""
+"""Store business-context documents in CONTEXT_DIR. Retrieve is a separate tool."""
 
 from __future__ import annotations
 

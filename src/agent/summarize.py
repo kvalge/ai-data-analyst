@@ -25,6 +25,7 @@ _SUMMARY_KEYS = frozenset(
         "artifacts",
         "truncated",
         "stdout",
+        "chunks",
     }
 )
 
@@ -142,6 +143,9 @@ def _summary_text(name: str, result: dict[str, Any]) -> str:
     stdout = result.get("stdout")
     if isinstance(stdout, str) and stdout:
         parts.append(f"stdout {len(stdout)} chars")
+    chunks = result.get("chunks")
+    if isinstance(chunks, list):
+        parts.append(f"{len(chunks)} chunk(s)")
     if result.get("truncated") is True:
         parts.append("truncated")
     if not parts:

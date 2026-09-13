@@ -39,6 +39,27 @@ def test_build_prompt_lists_only_last_artifacts():
     assert f"C:/data/artifacts/{DEFAULT_MAX_ARTIFACTS}.csv" in text
 
 
+def test_build_prompt_includes_retrieved_snippet():
+    """A retrieve result injects snippet text into the next prompt."""
+    state = empty_agent_state()
+    state["messages"] = [{"role": "user", "content": "what is revenue?"}]
+    state["last_tool_result"] = {
+        "name": "retrieve_domain_context",
+        "summary": "retrieve_domain_context: 1 chunk(s)",
+        "chunks": [
+            {
+                "source_file": "sample_glossary.md",
+                "chunk_id": "sample_glossary.md:0",
+                "text": "Revenue is net of returns.",
+                "score": 0.5,
+            }
+        ],
+    }
+    text = build_prompt(state, max_turns=8)
+    assert "Revenue is net of returns." in text
+    assert "date,region,revenue" not in text
+
+
 def test_build_prompt_includes_last_tool_summary():
     """The latest compacted tool result stays in the prompt."""
     state = empty_agent_state()

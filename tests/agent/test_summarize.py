@@ -124,6 +124,26 @@ def test_merge_artifacts_below_one_raises():
         merge_artifacts(["C:/data/artifacts/a.csv"], [], max_artifacts=0)
 
 
+def test_retrieve_chunks_count_is_in_summary():
+    """RAG results summarize a count, not snippet text."""
+    stored = summarize_tool_result(
+        "retrieve_domain_context",
+        {
+            "chunks": [
+                {
+                    "source_file": "sample_glossary.md",
+                    "chunk_id": "sample_glossary.md:0",
+                    "text": "Revenue is net of returns.",
+                    "score": 0.5,
+                }
+            ]
+        },
+    )
+    assert "1 chunk(s)" in stored["summary"]
+    assert stored["chunks"][0]["text"] == "Revenue is net of returns."
+    assert "Revenue is net of returns." not in stored["summary"]
+
+
 def test_stdout_without_artifacts_is_in_summary():
     """run_analysis_code still gets a summary when it only printed text."""
     stored = summarize_tool_result(
