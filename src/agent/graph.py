@@ -69,6 +69,7 @@ from src.agent.profile_steps import (
 )
 from src.agent.prompts import build_system_prompt
 from src.agent.state import AgentState
+from src.agent.summarize import checkpoint_tool_result, is_json_safe
 from src.config import Settings
 from src.db.postgres import postgres_configured
 from src.storage.registry import get_file_source
@@ -293,6 +294,9 @@ def build_graph(
         except Exception as exc:
             _LOG.info("graph detect_schema failed")
             return {"error": str(exc)}
+        if not is_json_safe(summary):
+            _LOG.info("graph detect_schema not json-safe")
+            return {"error": "Profile summary is not JSON-safe."}
         updates: dict[str, Any] = {
             "profile_summary": summary,
             "pending_interrupt": None,
@@ -486,14 +490,18 @@ def build_graph(
             except Exception as exc:
                 _LOG.info("graph tool failed name=%s", name)
                 return {"error": str(exc), "pending_tool": None}
-        updates: dict[str, Any] = {
-            "last_tool_result": result,
-            "pending_tool": None,
-            "error": None,
-        }
-        if name == "profile_source":
-            updates["profile_summary"] = result
-        return updates
+        prior = [
+            item
+            for item in (state.get("artifacts") or [])
+            if isinstance(item, str)
+        ]
+        try:
+            return checkpoint_tool_result(
+                name=name, result=result, prior_artifacts=prior
+            )
+        except (TypeError, ValueError) as exc:
+            _LOG.info("graph tool result rejected name=%s", name)
+            return {"error": str(exc), "pending_tool": None}
 
     graph = StateGraph(AgentState)
     graph.add_node("confirm_sources", confirm_sources_node)

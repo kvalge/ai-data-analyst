@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission. Code `# TODO` / `# FIXME` comments are also listed under **Open TODOs (code)** below.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** **3.12 done.** **3.13 done.** **4.1 done.** **4.2 done.** **4.3 done.** **4.4 done.** **4.5 done.** **4.6 done.** **4.7 done.** **4.8 done.** **4.9 done.** **4.10 done.** **4.11 done.** **4.12 done.** **5.1 done.** **5.2 done.** Next step: **5.3**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** **3.12 done.** **3.13 done.** **4.1 done.** **4.2 done.** **4.3 done.** **4.4 done.** **4.5 done.** **4.6 done.** **4.7 done.** **4.8 done.** **4.9 done.** **4.10 done.** **4.11 done.** **4.12 done.** **5.1 done.** **5.2 done.** **5.3 done.** Next step: **5.4**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -482,8 +482,9 @@ No sandbox code execution yet. Tools: `list_available_sources`, `read_file_sampl
 
 ### 5.3 Result summaries in state
 
-- After tools, store a short text summary + artifact paths, not tables.
-- Test: state JSON has no large record lists.
+- [x] After tools, store a short text summary + artifact paths, not tables.
+- [x] Test: state JSON has no large record lists.
+- `checkpoint_tool_result` drops `rows`, adds `name` + `summary`, appends artifact paths, and rejects non-JSON values (`is_json_safe` = `json.dumps` without `default`). Tools still return rows to the caller; only graph state is compacted. `profile_summary` stays the compact profile dict. A result with no known summary keys logs at debug (key names only).
 
 ### 5.4 Truncate / last-N messages
 
@@ -640,7 +641,6 @@ Not current-step work and not code `# TODO`s. Revisit when the listed step runs.
 | later | `_type_mismatch_kind` still uses early-return. 2.6 did not add a third type-mismatch parser; flatten into an ordered loop if type and format parsers are ever merged. |
 | later | Thousands-separator locale: decide how to detect which numeric style a column uses (US vs EU, possibly mixed). Do not just add a second hardcoded regex next to `_THOUSANDS`. (Also a code TODO in `dq.py`.) |
 | later fixture | `detect_nulls` empty-frame test is 0 rows with columns present. An all-null column (rows exist; pandas may infer `float64`) is a different shape; cover it if a later DQ fixture already looks like that. |
-| 3.6 / 5.x | `profile_summary` and `last_tool_result` are `dict[str, Any]`; a DataFrame can be assigned at runtime. The annotation-string test does not catch that. Before checkpoints persist state, add `is_json_safe` (or `json.dumps` without `default=str`) so a frame fails closed. |
 
 ---
 
@@ -658,6 +658,6 @@ Not current-step work and not code `# TODO`s. Revisit when the listed step runs.
 
 ## Current focus
 
-**5.2 done.** Next: **5.3 Result summaries in state**.
-Do not start 5.3 until you say to proceed.
-Checkpoints persist at `CHECKPOINT_PATH`. Restart Streamlit to resume the same thread.
+**5.3 done.** Next: **5.4 Truncate / last-N messages**.
+Do not start 5.4 until you say to proceed.
+Tool results in state are a short summary + artifact paths, not row lists.

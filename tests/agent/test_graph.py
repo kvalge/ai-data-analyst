@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
 
@@ -15,7 +16,7 @@ from src.agent.llm import LlmError
 from src.agent.prompts import build_system_prompt
 from src.agent.state import HITL_MODE_STANDARD, AgentState, empty_agent_state
 from src.config import Settings, load_settings
-from src.storage.registry import save_file_source
+from src.storage.registry import list_file_sources, save_file_source
 
 _PLACEHOLDER_MODELS = {
     "OLLAMA_MODEL_PRIMARY": "placeholder-primary:tag",
@@ -180,6 +181,36 @@ def test_list_available_sources_runs_then_replies(
         "role": "assistant",
         "content": "There is 1 source.",
     }
+
+
+def test_sample_result_in_state_omits_rows(settings: Settings):
+    """Checkpointed last_tool_result keeps a summary, not the sample rows."""
+    source_id = list_file_sources(settings.upload_dir)[0].source_id
+    replies = [
+        json.dumps(
+            {
+                "name": "read_file_sample",
+                "arguments": {"source_id": source_id},
+            }
+        ),
+        "sampled",
+    ]
+
+    def fake_complete(prompt: str, **kwargs: Any) -> str:
+        return replies.pop(0)
+
+    graph = build_graph(settings=settings, complete_fn=fake_complete)
+    result = graph.invoke(_user_turn("show a sample"), _THREAD)
+    stored = result["last_tool_result"]
+    assert stored is not None
+    assert "rows" not in stored
+    assert stored["name"] == "read_file_sample"
+    assert stored["columns"] == ["date", "region", "revenue"]
+    assert "North" not in json.dumps(stored)
+    snap = graph.get_state(_THREAD)
+    encoded = json.dumps(snap.values)
+    assert '"rows"' not in encoded
+    assert result["messages"][-1]["content"] == "sampled"
 
 
 def test_failed_tool_is_visible_without_a_second_llm_call(settings: Settings):

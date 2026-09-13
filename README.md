@@ -78,6 +78,7 @@ uploads, source list, optional Postgres test. **Main:** preview and
 profile panels (they can stay open together; close either from its
 heading), then chat. Restarting Streamlit resumes the last thread from
 `CHECKPOINT_PATH` (`./data/checkpoints/graph.sqlite` by default).
+Checkpoints store a short tool summary and artifact paths, not tables.
 
 In **Guided** mode, chat pauses after schema, then data quality, then EDA
 (Continue / Skip remaining / Abort). Standard and Auto run those steps
