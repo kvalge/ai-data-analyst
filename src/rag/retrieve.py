@@ -38,6 +38,11 @@ class DomainContextIndex:
         ]
         _LOG.info("index context chunks=%s", len(self._chunks))
 
+    @property
+    def chunks(self) -> list[dict[str, str]]:
+        """Copied `{source_file, chunk_id, text}` rows. No scores."""
+        return [dict(chunk) for chunk in self._chunks]
+
     def retrieve(self, query: str, *, top_k: int) -> dict[str, Any]:
         """Return `{chunks}` scored by TF-IDF cosine similarity."""
         if top_k < 1:

@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from src.rag import DEFAULT_TOP_K
-from src.rag.index import build_context_index
+from src.rag.index import reindex_context
 from src.rag.retrieve import retrieve_domain_context as search_context_index
 from src.tools.contracts import ToolContract
 
@@ -69,13 +69,17 @@ def retrieve_domain_context(
     query: str,
     *,
     context_dir: Path,
+    cache_dir: Path,
     max_bytes: int,
     top_k: int = DEFAULT_TOP_K,
 ) -> dict[str, Any]:
     """Return top-k context snippets. Never indexes data files.
 
-    `context_dir` and `max_bytes` are injected by the app, not the LLM.
+    `context_dir`, `cache_dir`, and `max_bytes` are injected by the app,
+    not the LLM.
     """
     _LOG.info("retrieve_domain_context top_k=%s", top_k)
-    index = build_context_index(context_dir, max_bytes=max_bytes)
+    index = reindex_context(
+        context_dir, cache_dir=cache_dir, max_bytes=max_bytes
+    )
     return search_context_index(query, index=index, top_k=top_k)

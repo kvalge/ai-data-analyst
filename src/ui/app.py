@@ -19,6 +19,8 @@ import streamlit as st
 from src.config import load_settings
 from src.db.postgres import DatabaseError, check_postgres_connection, postgres_configured
 from src.logging_setup import configure_logging
+from src.rag.index import reindex_context
+from src.rag.readers import ContextReadError
 from src.storage.context import ingest_context_upload, list_context_files
 from src.storage.ingest import ingest_data_upload
 from src.storage.paths import ensure_runtime_dirs
@@ -118,9 +120,14 @@ with st.sidebar:
                     settings.context_dir,
                     max_bytes=settings.max_upload_bytes,
                 )
+                reindex_context(
+                    settings.context_dir,
+                    cache_dir=settings.cache_dir,
+                    max_bytes=settings.max_upload_bytes,
+                )
                 st.session_state.ingested_context_token = token
                 st.session_state.context_upload_error = None
-            except FileValidationError as exc:
+            except (FileValidationError, ContextReadError) as exc:
                 st.session_state.context_upload_error = str(exc)
         if st.session_state.get("context_upload_error"):
             st.error(st.session_state.context_upload_error)

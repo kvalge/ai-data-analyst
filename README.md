@@ -42,8 +42,8 @@ Auto runs it without asking; the tool-use audit line is still written.
 
 Chat still has the primary model write SQL/Python tool arguments; a
 plan→coding-model helper validates generated code but is not in the
-graph yet. Context retrieve is keyword/TF-IDF over CONTEXT_DIR; it
-does not reindex automatically on upload yet. Postgres queries are one
+graph yet. Context retrieve is keyword/TF-IDF over CONTEXT_DIR; the
+index rebuilds when a context file is uploaded. Postgres queries are one
 checked SELECT/WITH. Sandbox Python is AST-checked, then run in a
 subprocess; results are stdout plus csv/png paths, not row dumps.
 

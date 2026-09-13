@@ -1,9 +1,9 @@
 # __init__.py
 
-"""Local domain-context RAG. Reindex-on-upload comes later."""
+"""Local domain-context RAG."""
 
 from src.rag.chunker import chunk_context
-from src.rag.index import build_context_index
+from src.rag.index import build_context_index, reindex_context
 from src.rag.readers import ContextReadError, read_context_file
 from src.rag.retrieve import (
     DEFAULT_TOP_K,
@@ -18,6 +18,7 @@ __all__ = [
     "ContextRetrieveError",
     "DomainContextIndex",
     "build_context_index",
+    "reindex_context",
     "chunk_context",
     "read_context_file",
     "retrieve_domain_context",

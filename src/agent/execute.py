@@ -287,6 +287,7 @@ def _injected_kwargs(
         return {
             "query": args["query"],
             "context_dir": settings.context_dir,
+            "cache_dir": settings.cache_dir,
             "max_bytes": settings.max_upload_bytes,
             "top_k": int(args.get("top_k", DEFAULT_TOP_K)),
         }

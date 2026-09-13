@@ -53,6 +53,7 @@ def test_retrieve_hits_glossary_and_skips_data_files(
     result = retrieve_domain_context(
         "What is revenue?",
         context_dir=context_dir,
+        cache_dir=tmp_path / "cache",
         max_bytes=_MAX,
         top_k=4,
     )
