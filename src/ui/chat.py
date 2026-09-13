@@ -28,6 +28,7 @@ from src.ui.code_review import render_code_review
 from src.ui.hitl import HITL_MODE_KEY, resolve_hitl_mode
 from src.ui.load_pause import render_load_pause
 from src.ui.profile_pause import render_profile_pause
+from src.ui.artifacts import render_table_artifacts
 from src.ui.source_confirm import render_source_confirm
 
 _INTERRUPT_KINDS = frozenset(
@@ -248,6 +249,15 @@ def render_chat(
             continue
         with st.chat_message(role):
             st.write(message.get("content", ""))
+    raw_artifacts = _snapshot_values(snap).get("artifacts") or []
+    artifact_paths = [
+        item
+        for item in raw_artifacts
+        if isinstance(item, str) and item.strip()
+    ]
+    render_table_artifacts(
+        artifact_paths, artifact_dir=settings.artifact_dir
+    )
     error = visible_chat_error(
         graph_error(graph, thread_id, snap=snap), st.session_state
     )
