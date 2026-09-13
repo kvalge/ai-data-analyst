@@ -223,7 +223,7 @@ Several stores; they are not one "chat memory dump".
 | Kind | Purpose | Lifetime |
 |---|---|---|
 | LangGraph checkpoint | Graph state + HITL resume (thread) | Per conversation thread, on local disk |
-| Working conversation | Last N turns + **summaries** of prior results, not full dataframes | Thread; truncate/summarize so the prompt stays small |
+| Working conversation | Last `MAX_PROMPT_TURNS` (default 8) + **summaries** of prior results, not full dataframes | Thread; the LLM prompt is windowed; checkpoint/UI keep the full thread |
 | Profile cache | Schema, DQ, EDA keyed by source identity (e.g. path + hash) | Until the source file/connection changes |
 | Artifact refs | Paths to tables/charts/reports the UI can render | Thread + designated output directory |
 | Domain RAG index | Business-context chunks | Until context files change; cross-session |
@@ -333,3 +333,4 @@ These are intentionally not fixed in this spec:
 - 2026-09: Model lineup set from local Ollama benchmarks; `qwen3.5:4b` primary, `granite4.2:8b` dropped.
 - 2026-09-04: Spec expanded before the first implementation plan: Streamlit as v1 UI; HITL modes and interrupt points; LangGraph orchestrates, MCP-shaped tools do not decide; local RAG for domain documents only; tests-with-each-phase; Docker deferred; subprocess sandbox in v1; single-user local app.
 - 2026-09-13: Checkpoints persist with SqliteSaver. Tool results in graph state are summaries + artifact paths, not tables.
+- 2026-09-13: LLM prompt keeps the last `MAX_PROMPT_TURNS` (default 8). Checkpointed chat history is not trimmed.
