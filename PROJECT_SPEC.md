@@ -336,3 +336,4 @@ These are intentionally not fixed in this spec:
 - 2026-09-13: LLM prompt keeps the last `MAX_PROMPT_TURNS` (default 8). Checkpointed chat history is not trimmed.
 - 2026-09-13: Follow-up turns see the last tool summary and artifact paths (paths only, not file contents).
 - 2026-09-13: `retrieve_domain_context` is an in-process TF-IDF tool over `CONTEXT_DIR`. Data files are never indexed.
+- 2026-09-13: Domain RAG index persists under `CACHE_DIR` and rebuilds when context files change.
