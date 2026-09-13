@@ -1,7 +1,8 @@
 # __init__.py
 
-"""Local domain-context RAG. Readers first; chunking and retrieve come later."""
+"""Local domain-context RAG. Retrieve comes later."""
 
+from src.rag.chunker import chunk_context
 from src.rag.readers import ContextReadError, read_context_file
 
-__all__ = ["ContextReadError", "read_context_file"]
+__all__ = ["ContextReadError", "chunk_context", "read_context_file"]
