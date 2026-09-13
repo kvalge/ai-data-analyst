@@ -14,6 +14,7 @@ from src.agent.summarize import (
     artifact_paths_from_result,
     checkpoint_tool_result,
     is_json_safe,
+    merge_artifacts,
     summarize_tool_result,
 )
 
@@ -72,6 +73,55 @@ def test_checkpoint_appends_new_artifact_paths():
     ]
     assert "1 artifact(s)" in updates["last_tool_result"]["summary"]
     assert updates["error"] is None
+
+
+def test_merge_artifacts_dedups_repeat_path():
+    """The same path is stored once; a repeat becomes the newest entry."""
+    assert merge_artifacts(
+        ["C:/data/artifacts/a.csv", "C:/data/artifacts/b.csv"],
+        ["C:/data/artifacts/a.csv"],
+    ) == ["C:/data/artifacts/b.csv", "C:/data/artifacts/a.csv"]
+
+
+def test_merge_artifacts_keeps_last_k():
+    """Older paths drop when the list exceeds the cap."""
+    prior = [f"C:/data/artifacts/{index}.csv" for index in range(8)]
+    merged = merge_artifacts(
+        prior, ["C:/data/artifacts/new.csv"], max_artifacts=8
+    )
+    assert "C:/data/artifacts/0.csv" not in merged
+    assert merged[-1] == "C:/data/artifacts/new.csv"
+    assert len(merged) == 8
+
+
+def test_merge_artifacts_trims_existing_over_cap():
+    """A pre-capped list is not assumed; a lowered cap still trims."""
+    prior = [f"C:/data/artifacts/{index}.csv" for index in range(5)]
+    merged = merge_artifacts(prior, [], max_artifacts=2)
+    assert merged == [
+        "C:/data/artifacts/3.csv",
+        "C:/data/artifacts/4.csv",
+    ]
+
+
+def test_merge_artifacts_logs_drop_count_only(
+    caplog: pytest.LogCaptureFixture,
+):
+    """Debug notes how many paths dropped, not which files."""
+    caplog.set_level(logging.DEBUG, logger="src.agent.summarize")
+    merge_artifacts(
+        ["C:/data/artifacts/old.csv"],
+        ["C:/data/artifacts/new.csv"],
+        max_artifacts=1,
+    )
+    assert "dropped 1 older path(s)" in caplog.text
+    assert "old.csv" not in caplog.text
+
+
+def test_merge_artifacts_below_one_raises():
+    """A non-positive cap is not silently treated as keep-all."""
+    with pytest.raises(ValueError, match="at least 1"):
+        merge_artifacts(["C:/data/artifacts/a.csv"], [], max_artifacts=0)
 
 
 def test_stdout_without_artifacts_is_in_summary():

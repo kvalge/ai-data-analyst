@@ -159,6 +159,32 @@ def test_prompt_keeps_only_last_n_turns(tmp_path, sample_sales_csv: Path):
     assert contents == ["alpha", "ok", "bravo", "ok"]
 
 
+def test_second_turn_prompt_includes_prior_summary(settings: Settings):
+    """A follow-up turn still sees the compacted last tool result."""
+    replies = [
+        '{"name": "list_available_sources", "arguments": {}}',
+        "There is 1 source.",
+        "still one",
+    ]
+    prompts: list[str] = []
+
+    def fake_complete(prompt: str, **kwargs: Any) -> str:
+        prompts.append(prompt)
+        return replies.pop(0)
+
+    graph = build_graph(settings=settings, complete_fn=fake_complete)
+    thread = {"configurable": {"thread_id": "follow-up-summary"}}
+    graph.invoke(_user_turn("what sources do I have?"), thread)
+    graph.invoke(
+        {"messages": [{"role": "user", "content": "how many?"}]}, thread
+    )
+    follow_up = prompts[-1]
+    assert "Last tool result" in follow_up
+    assert "list_available_sources" in follow_up
+    assert "1 source" in follow_up
+    assert "how many?" in follow_up
+
+
 def test_memory_saver_keeps_thread_history(settings: Settings):
     """A second turn on the same thread still sees the first messages."""
     replies = ["first-reply", "second-reply"]

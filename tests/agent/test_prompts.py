@@ -32,6 +32,13 @@ def test_prompt_forbids_dumping_full_data():
     assert "Never dump a full dataset" in text
 
 
+def test_prompt_tells_model_to_reuse_artifact_paths():
+    """Follow-ups should reuse listed artifact files, not invent paths."""
+    text = build_system_prompt(hitl_mode=HITL_MODE_STANDARD)
+    assert "reuse those files for follow-up" in text
+    assert "Do not invent artifact paths" in text
+
+
 def test_prompt_forbids_inventing_tools():
     """The model must not invent a tool name."""
     text = build_system_prompt(hitl_mode=HITL_MODE_STANDARD)

@@ -70,7 +70,7 @@ from src.agent.profile_steps import (
 from src.agent.history import recent_messages
 from src.agent.prompts import build_system_prompt
 from src.agent.state import AgentState
-from src.agent.summarize import checkpoint_tool_result, is_json_safe
+from src.agent.summarize import checkpoint_tool_result, is_json_safe, merge_artifacts
 from src.config import Settings
 from src.db.postgres import postgres_configured
 from src.storage.registry import get_file_source
@@ -94,7 +94,7 @@ class CompleteFn(Protocol):
 
 
 def build_prompt(state: AgentState, *, max_turns: int) -> str:
-    """System prompt plus the last N turns. Never includes a full file."""
+    """System prompt, last N turns, latest summary, and artifact paths."""
     parts = [build_system_prompt(hitl_mode=state["hitl_mode"])]
     for message in recent_messages(state["messages"], max_turns=max_turns):
         content = message.get("content", "").strip()
@@ -106,6 +106,15 @@ def build_prompt(state: AgentState, *, max_turns: int) -> str:
         parts.append(
             "Last tool result (do not invent extra rows):\n"
             + json.dumps(result)
+        )
+    raw_artifacts = state.get("artifacts") or []
+    paths = merge_artifacts(
+        raw_artifacts if isinstance(raw_artifacts, list) else [], []
+    )
+    if paths:
+        parts.append(
+            "Available artifacts (paths only; reuse these, do not invent):\n"
+            + "\n".join(paths)
         )
     summary = state.get("profile_summary")
     if summary is not None:

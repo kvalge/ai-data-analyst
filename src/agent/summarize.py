@@ -6,9 +6,12 @@ from __future__ import annotations
 
 import json
 import logging
+from pathlib import Path
 from typing import Any
 
 _LOG = logging.getLogger(__name__)
+
+DEFAULT_MAX_ARTIFACTS = 8
 
 _RECORD_LIST_KEYS = frozenset({"rows"})
 _SUMMARY_KEYS = frozenset(
@@ -43,6 +46,37 @@ def artifact_paths_from_result(result: dict[str, Any]) -> list[str]:
     return [item for item in raw if isinstance(item, str) and item.strip()]
 
 
+def _artifact_key(path: str) -> str:
+    """Slash-normalize a path for dedup. Do not resolve or read the file."""
+    return str(Path(path.strip()))
+
+
+def merge_artifacts(
+    prior: list[Any],
+    incoming: list[Any],
+    *,
+    max_artifacts: int = DEFAULT_MAX_ARTIFACTS,
+) -> list[str]:
+    """Dedup paths and keep the last `max_artifacts`. Newest stays last."""
+    if max_artifacts < 1:
+        raise ValueError("max_artifacts must be at least 1.")
+    merged: list[str] = []
+    seen: set[str] = set()
+    for raw in [*prior, *incoming]:
+        if not isinstance(raw, str) or not raw.strip():
+            continue
+        text = raw.strip()
+        key = _artifact_key(text)
+        if key in seen:
+            merged = [item for item in merged if _artifact_key(item) != key]
+        seen.add(key)
+        merged.append(text)
+    dropped = max(0, len(merged) - max_artifacts)
+    if dropped:
+        _LOG.debug("artifacts dropped %s older path(s)", dropped)
+    return merged[-max_artifacts:]
+
+
 def summarize_tool_result(name: str, result: dict[str, Any]) -> dict[str, Any]:
     """Copy a tool result, drop row lists, and add a short summary text."""
     if not isinstance(result, dict):
@@ -74,8 +108,7 @@ def checkpoint_tool_result(
     }
     paths = artifact_paths_from_result(stored)
     if paths:
-        seen = [item for item in prior_artifacts if isinstance(item, str)]
-        updates["artifacts"] = seen + [path for path in paths if path not in seen]
+        updates["artifacts"] = merge_artifacts(prior_artifacts, paths)
     if name == "profile_source":
         if not is_json_safe(result):
             raise ValueError("Tool result is not JSON-safe.")
