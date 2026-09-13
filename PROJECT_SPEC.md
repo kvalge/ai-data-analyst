@@ -124,7 +124,7 @@ scope for v1.
 - `query_database(connection_id, sql)` — parameterized, read-only
 - `load_full_file(path)` — full load when sampling isn't sufficient
 - `run_analysis_code(code)` — execute generated pandas/SQL in a sandbox
-- `retrieve_domain_context(query)` — later phase; local RAG over context files
+- `retrieve_domain_context(query)` — local TF-IDF over uploaded context files; never data files
 
 **Later (not v1 data-access tools):** generated reports and dashboards as
 output artifacts, after core Q&A and charts work.
@@ -335,3 +335,4 @@ These are intentionally not fixed in this spec:
 - 2026-09-13: Checkpoints persist with SqliteSaver. Tool results in graph state are summaries + artifact paths, not tables.
 - 2026-09-13: LLM prompt keeps the last `MAX_PROMPT_TURNS` (default 8). Checkpointed chat history is not trimmed.
 - 2026-09-13: Follow-up turns see the last tool summary and artifact paths (paths only, not file contents).
+- 2026-09-13: `retrieve_domain_context` is an in-process TF-IDF tool over `CONTEXT_DIR`. Data files are never indexed.
