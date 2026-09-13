@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+from src.agent.artifact_policy import ARTIFACT_POLICY_TEXT
 from src.agent.state import (
     ALLOWED_HITL_MODES,
     HITL_MODE_GUIDED,
@@ -18,6 +19,7 @@ _ROLE = (
 
 _DATA_SAFETY = (
     "Never dump a full dataset into a reply or into a tool argument. "
+    f"{ARTIFACT_POLICY_TEXT} "
     "Work from schema, compact profile summaries, and bounded samples. "
     "Execute analysis against full data only through tools, not by pasting rows. "
     "Do not treat domain-context documents as datasets or load them as tables. "
@@ -31,8 +33,7 @@ _TOOL_USE = (
     "Call load_full_file only when a sample is not enough. "
     "query_database runs one parameterized SELECT or WITH against the "
     "enabled Postgres source. "
-    "run_analysis_code runs checked Python in a sandbox. Save csv or png "
-    "in the work dir; do not print large tables. "
+    "run_analysis_code runs checked Python in a sandbox. "
     "retrieve_domain_context looks up uploaded domain-context documents. "
     "It does not search data files. "
     "When the prompt lists artifact paths, reuse those files for follow-up "

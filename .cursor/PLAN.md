@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission. Code `# TODO` / `# FIXME` comments are also listed under **Open TODOs (code)** below.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** **3.12 done.** **3.13 done.** **4.1 done.** **4.2 done.** **4.3 done.** **4.4 done.** **4.5 done.** **4.6 done.** **4.7 done.** **4.8 done.** **4.9 done.** **4.10 done.** **4.11 done.** **4.12 done.** **5.1 done.** **5.2 done.** **5.3 done.** **5.4 done.** **5.5 done.** **6.1 done.** **6.2 done.** **6.3 done.** **6.4 done.** **6.5 done.** **6.6 skipped.** **7.1 done.** **7.2 done.** Next step: **7.3**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** **3.12 done.** **3.13 done.** **4.1 done.** **4.2 done.** **4.3 done.** **4.4 done.** **4.5 done.** **4.6 done.** **4.7 done.** **4.8 done.** **4.9 done.** **4.10 done.** **4.11 done.** **4.12 done.** **5.1 done.** **5.2 done.** **5.3 done.** **5.4 done.** **5.5 done.** **6.1 done.** **6.2 done.** **6.3 done.** **6.4 done.** **6.5 done.** **6.6 skipped.** **7.1 done.** **7.2 done.** **7.3 done.** Next step: **7.4**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -554,8 +554,9 @@ No sandbox code execution yet. Tools: `list_available_sources`, `read_file_sampl
 
 ### 7.3 Agent instructions for artifacts
 
-- Prompt: save tables/charts to the work dir; do not paste large tables into the chat.
+- [x] Prompt: save tables/charts to the work dir; do not paste large tables into the chat.
 - Eval later in 9.x.
+- `ARTIFACT_POLICY_TEXT` in `src/agent/artifact_policy.py` is the one wording: save csv/png in the work dir; do not print or paste large tables into the chat. The system prompt and the coding-model prompt both include it. Behavior eval stays 9.x.
 
 ### 7.4 Markdown report export
 
@@ -669,6 +670,6 @@ Not current-step work and not code `# TODO`s. Revisit when the listed step runs.
 
 ## Current focus
 
-**7.2 done.** Next: **7.3 Agent instructions for artifacts**.
-Do not start 7.3 until you say to proceed.
-Sandbox png paths under ARTIFACT_DIR show as images in chat.
+**7.3 done.** Next: **7.4 Markdown report export**.
+Do not start 7.4 until you say to proceed.
+The agent is told to save csv/png in the work dir and not paste large tables into chat.

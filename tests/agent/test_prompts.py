@@ -6,6 +6,8 @@ from pathlib import Path
 
 import pytest
 
+from src.agent.artifact_policy import ARTIFACT_POLICY_TEXT
+from src.agent.codegen import KIND_PYTHON, _code_prompt
 from src.agent.prompts import build_system_prompt
 from src.agent.state import HITL_MODE_AUTO, HITL_MODE_GUIDED, HITL_MODE_STANDARD
 from src.tools.registry import TOOL_REGISTRY
@@ -37,6 +39,14 @@ def test_prompt_says_retrieve_skips_data_files():
     text = build_system_prompt(hitl_mode=HITL_MODE_STANDARD)
     assert "retrieve_domain_context looks up uploaded domain-context" in text
     assert "It does not search data files" in text
+
+
+def test_artifact_policy_is_shared_by_system_and_code_prompts():
+    """A wording change to the artifact policy must hit both prompts."""
+    assert ARTIFACT_POLICY_TEXT in build_system_prompt(
+        hitl_mode=HITL_MODE_STANDARD
+    )
+    assert ARTIFACT_POLICY_TEXT in _code_prompt(KIND_PYTHON, "sum revenue", 1000)
 
 
 def test_prompt_tells_model_to_reuse_artifact_paths():

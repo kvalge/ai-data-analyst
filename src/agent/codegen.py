@@ -7,6 +7,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Protocol
 
+from src.agent.artifact_policy import ARTIFACT_POLICY_TEXT
 from src.agent.json_output import (
     FIRST_PARSE_FAILURE,
     RETRY_STRICT,
@@ -205,8 +206,9 @@ def _code_prompt(kind: str, task: str, limit: int) -> str:
         header = (
             "Write Python for a local sandbox. Reply with Python only, "
             "no markdown fences, no commentary. The registered file is "
-            "already in the work dir under its original basename. Save csv "
-            "or png there. Do not print large tables. Do not import "
+            "already in the work dir under its original basename. "
+            f"{ARTIFACT_POLICY_TEXT} "
+            "Do not import "
             "subprocess, socket, requests, http, or urllib. Do not use "
             "eval, exec, or __import__."
         )
