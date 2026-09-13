@@ -230,8 +230,10 @@ Several stores; they are not one "chat memory dump".
 | Audit log | What ran, for humans | Cross-session; not fed wholesale back to the model |
 
 v1 does **not** include a long-term memory of every past analysis, and
-does not put entire datasets into agent state. Checkpointer backend and
-summarization strategy are plan-time.
+does not put entire datasets into agent state. Checkpoints use local
+SQLite. After a tool runs, state keeps a short summary, identities, and
+artifact paths — not row lists. A value that cannot `json.dumps` without
+a default hook is rejected.
 
 ## Testing
 
@@ -317,7 +319,7 @@ These are intentionally not fixed in this spec:
 
 - LangGraph topology (node names, edges, which node calls `interrupt()`)
 - Per-tool JSON schemas and which subset ships in which phase
-- Checkpointer backend (e.g. SQLite vs in-memory for tests)
+- Checkpointer backend for tests (in-memory `MemorySaver`)
 - Embedding model and local vector store
 - Exact SQL/Python static deny-lists and size/row thresholds
 - Streamlit layout (pages vs single chat; widget structure)
@@ -330,3 +332,4 @@ These are intentionally not fixed in this spec:
 
 - 2026-09: Model lineup set from local Ollama benchmarks; `qwen3.5:4b` primary, `granite4.2:8b` dropped.
 - 2026-09-04: Spec expanded before the first implementation plan: Streamlit as v1 UI; HITL modes and interrupt points; LangGraph orchestrates, MCP-shaped tools do not decide; local RAG for domain documents only; tests-with-each-phase; Docker deferred; subprocess sandbox in v1; single-user local app.
+- 2026-09-13: Checkpoints persist with SqliteSaver. Tool results in graph state are summaries + artifact paths, not tables.
