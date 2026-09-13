@@ -84,7 +84,8 @@ Checkpoints store a short tool summary and artifact paths, not tables.
 The model prompt keeps the last `MAX_PROMPT_TURNS` (default 8); the chat
 UI still shows the full thread. Follow-up questions can reuse listed
 artifact paths from earlier tools. A `.csv` (or `.parquet`) path under
-`ARTIFACT_DIR` is shown as a table in chat.
+`ARTIFACT_DIR` is shown as a table in chat. A `.png` path under
+`ARTIFACT_DIR` is shown as an image.
 
 In **Guided** mode, chat pauses after schema, then data quality, then EDA
 (Continue / Skip remaining / Abort). Standard and Auto run those steps

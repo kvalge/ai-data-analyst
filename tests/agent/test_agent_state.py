@@ -134,6 +134,8 @@ def test_as_artifact_path_rejects_outside_artifact_dir(tmp_path: Path):
     artifact_dir = tmp_path / "artifacts"
     artifact_dir.mkdir()
     sneaky = artifact_dir / ".." / "outside.png"
+    # ValueError is the render-loop contract: a different base type would
+    # miss ArtifactRenderError translation and crash the Streamlit rerun.
     with pytest.raises(ValueError, match="inside"):
         as_artifact_path(sneaky, artifact_dir=artifact_dir)
 
