@@ -30,6 +30,7 @@ DEFAULT_SAMPLE_N_ROWS = 50
 DEFAULT_SANDBOX_TIMEOUT_S = 30
 DEFAULT_OLLAMA_TIMEOUT_S = 120
 DEFAULT_MAX_PROMPT_CHARS = 8_000
+DEFAULT_MAX_PROMPT_TURNS = 8
 
 _REDACTED_FIELDS = frozenset({"db_password"})
 
@@ -58,6 +59,7 @@ class Settings:
     sample_n_rows: int
     sandbox_timeout_s: int
     max_prompt_chars: int
+    max_prompt_turns: int
     log_level: str
     db_host: str
     db_port: int
@@ -124,6 +126,9 @@ def load_settings(
         ),
         max_prompt_chars=_get_int(
             environ, "MAX_PROMPT_CHARS", DEFAULT_MAX_PROMPT_CHARS
+        ),
+        max_prompt_turns=_get_int(
+            environ, "MAX_PROMPT_TURNS", DEFAULT_MAX_PROMPT_TURNS
         ),
         log_level=_get_str(environ, "LOG_LEVEL", DEFAULT_LOG_LEVEL),
         db_host=_get_str(environ, "DB_HOST", DEFAULT_DB_HOST),

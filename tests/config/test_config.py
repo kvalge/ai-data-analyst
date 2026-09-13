@@ -7,6 +7,7 @@ import pytest
 from src.config import (
     DEFAULT_MAX_FULL_LOAD_ROWS,
     DEFAULT_MAX_PROMPT_CHARS,
+    DEFAULT_MAX_PROMPT_TURNS,
     DEFAULT_MAX_UPLOAD_BYTES,
     DEFAULT_OLLAMA_HOST,
     DEFAULT_OLLAMA_TIMEOUT_S,
@@ -51,7 +52,19 @@ def test_defaults_resolve(tmp_path):
     assert settings.sandbox_timeout_s == DEFAULT_SANDBOX_TIMEOUT_S
     assert settings.ollama_timeout_s == DEFAULT_OLLAMA_TIMEOUT_S
     assert settings.max_prompt_chars == DEFAULT_MAX_PROMPT_CHARS
+    assert settings.max_prompt_turns == DEFAULT_MAX_PROMPT_TURNS
     assert settings.log_level == "INFO"
+
+
+def test_max_prompt_turns_from_env(tmp_path):
+    """MAX_PROMPT_TURNS is read from the environment."""
+    settings = load_settings(
+        environ={"MAX_PROMPT_TURNS": "2"},
+        load_dotenv_file=False,
+        project_root=tmp_path,
+        require_models=False,
+    )
+    assert settings.max_prompt_turns == 2
 
 
 def test_ollama_timeout_from_env(tmp_path):

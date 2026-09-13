@@ -67,6 +67,7 @@ from src.agent.profile_steps import (
     should_pause_profiling,
     with_cleared_profile_ids,
 )
+from src.agent.history import recent_messages
 from src.agent.prompts import build_system_prompt
 from src.agent.state import AgentState
 from src.agent.summarize import checkpoint_tool_result, is_json_safe
@@ -92,10 +93,10 @@ class CompleteFn(Protocol):
     ) -> str: ...
 
 
-def build_prompt(state: AgentState) -> str:
-    """System prompt plus conversation text. Never includes a full file."""
+def build_prompt(state: AgentState, *, max_turns: int) -> str:
+    """System prompt plus the last N turns. Never includes a full file."""
     parts = [build_system_prompt(hitl_mode=state["hitl_mode"])]
-    for message in state["messages"]:
+    for message in recent_messages(state["messages"], max_turns=max_turns):
         content = message.get("content", "").strip()
         if not content:
             continue
@@ -353,7 +354,7 @@ def build_graph(
             for message in state["messages"]
         ):
             return {"error": "No user message to reply to."}
-        prompt = build_prompt(state)
+        prompt = build_prompt(state, max_turns=settings.max_prompt_turns)
         try:
             reply = _llm_reply(prompt)
             call = interpret_model_reply(reply)

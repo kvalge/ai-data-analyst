@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission. Code `# TODO` / `# FIXME` comments are also listed under **Open TODOs (code)** below.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** **3.12 done.** **3.13 done.** **4.1 done.** **4.2 done.** **4.3 done.** **4.4 done.** **4.5 done.** **4.6 done.** **4.7 done.** **4.8 done.** **4.9 done.** **4.10 done.** **4.11 done.** **4.12 done.** **5.1 done.** **5.2 done.** **5.3 done.** Next step: **5.4**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** **3.12 done.** **3.13 done.** **4.1 done.** **4.2 done.** **4.3 done.** **4.4 done.** **4.5 done.** **4.6 done.** **4.7 done.** **4.8 done.** **4.9 done.** **4.10 done.** **4.11 done.** **4.12 done.** **5.1 done.** **5.2 done.** **5.3 done.** **5.4 done.** Next step: **5.5**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -27,9 +27,9 @@ Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 | Context same-name upload | **Overwrite** the file in `CONTEXT_DIR`. Basename is the document identity (unlike hashed data sources). No auto-rename, no reject. |
 | Tool results | Success = plain dict matching `result_schema`. Failure = raise a domain exception. No per-tool ok/error wrapper. |
 | `profile_source` scope | **Quick overview of a bounded head** (`n_rows`, default `SAMPLE_N_ROWS`). Not a whole-file profiler. Whole-file numbers only when the file fits in that cap (plus CSV `file_row_count`). Exact large-file profile is 2.12+. |
-| New env vars (placeholders in `.env.example`) | `CONTEXT_DIR`, `CACHE_DIR`, `ARTIFACT_DIR`, `CHECKPOINT_PATH`, `MAX_UPLOAD_BYTES`, `MAX_FULL_LOAD_ROWS`, `SAMPLE_N_ROWS`, `SANDBOX_TIMEOUT_S`, `OLLAMA_TIMEOUT_S`, `MAX_PROMPT_CHARS` |
+| New env vars (placeholders in `.env.example`) | `CONTEXT_DIR`, `CACHE_DIR`, `ARTIFACT_DIR`, `CHECKPOINT_PATH`, `MAX_UPLOAD_BYTES`, `MAX_FULL_LOAD_ROWS`, `SAMPLE_N_ROWS`, `SANDBOX_TIMEOUT_S`, `OLLAMA_TIMEOUT_S`, `MAX_PROMPT_CHARS`, `MAX_PROMPT_TURNS` |
 
-**Default limits:** upload 50 MB; sample 50 rows; auto full-load pause above 100 000 rows or 50 MB; sandbox 30 s; Ollama generate 120 s; prompt 8 000 characters.
+**Default limits:** upload 50 MB; sample 50 rows; auto full-load pause above 100 000 rows or 50 MB; sandbox 30 s; Ollama generate 120 s; prompt 8 000 characters; prompt window 8 turns.
 
 **SQL static checks:** single statement; reject write/DDL (`INSERT`, `UPDATE`, `DELETE`, `DROP`, `ALTER`, `CREATE`, `TRUNCATE`, `GRANT`, `COPY`, `INTO`).
 
@@ -488,8 +488,9 @@ No sandbox code execution yet. Tools: `list_available_sources`, `read_file_sampl
 
 ### 5.4 Truncate / last-N messages
 
-- Keep last N turns + the system prompt; drop older raw tool dumps.
-- Test.
+- [x] Keep last N turns + the system prompt; drop older raw tool dumps.
+- [x] Test.
+- `recent_messages` windows the LLM prompt to the last `MAX_PROMPT_TURNS` user turns (default 8). The system prompt is always first. Checkpointed `messages` and the chat UI keep the full thread. Dropped turns log a count at debug, not content. Char-length trim is 8.2.
 
 ### 5.5 Follow-up uses prior artifacts
 
@@ -658,6 +659,6 @@ Not current-step work and not code `# TODO`s. Revisit when the listed step runs.
 
 ## Current focus
 
-**5.3 done.** Next: **5.4 Truncate / last-N messages**.
-Do not start 5.4 until you say to proceed.
-Tool results in state are a short summary + artifact paths, not row lists.
+**5.4 done.** Next: **5.5 Follow-up uses prior artifacts**.
+Do not start 5.5 until you say to proceed.
+The LLM prompt keeps the last `MAX_PROMPT_TURNS` (default 8). Chat history on disk is not trimmed.

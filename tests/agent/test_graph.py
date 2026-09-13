@@ -128,6 +128,37 @@ def test_missing_user_message_sets_error(settings: Settings):
     assert result["error"] == "No user message to reply to."
 
 
+def test_prompt_keeps_only_last_n_turns(tmp_path, sample_sales_csv: Path):
+    """The LLM sees the last turn; the checkpoint still has the older ones."""
+    loaded = load_settings(
+        environ={
+            "OLLAMA_HOST": "http://ollama.test:11434",
+            **_PLACEHOLDER_MODELS,
+            "MAX_PROMPT_TURNS": "1",
+        },
+        load_dotenv_file=False,
+        project_root=tmp_path,
+    )
+    incoming = tmp_path / "sales-window.csv"
+    incoming.write_bytes(sample_sales_csv.read_bytes())
+    save_file_source(incoming, loaded.upload_dir, original_name="sales.csv")
+    prompts: list[str] = []
+
+    def fake_complete(prompt: str, **kwargs: Any) -> str:
+        prompts.append(prompt)
+        return "ok"
+
+    graph = build_graph(settings=loaded, complete_fn=fake_complete)
+    thread = {"configurable": {"thread_id": "prompt-window"}}
+    graph.invoke(_user_turn("alpha"), thread)
+    graph.invoke({"messages": [{"role": "user", "content": "bravo"}]}, thread)
+    assert "user: bravo" in prompts[-1]
+    assert "user: alpha" not in prompts[-1]
+    snap = graph.get_state(thread)
+    contents = [m["content"] for m in snap.values["messages"]]
+    assert contents == ["alpha", "ok", "bravo", "ok"]
+
+
 def test_memory_saver_keeps_thread_history(settings: Settings):
     """A second turn on the same thread still sees the first messages."""
     replies = ["first-reply", "second-reply"]
