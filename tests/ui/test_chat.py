@@ -16,11 +16,16 @@ from src.config import Settings, load_settings
 from src.storage.registry import save_file_source
 from src.agent.confirm_sources import REASON_NO_SOURCES
 from src.ui.chat import (
+    CHAT_ERROR_KEY,
+    THREAD_ID_KEY,
     ensure_thread_id,
     graph_error,
     graph_interrupt_payload,
     graph_messages,
+    graph_profile_summary,
+    graph_snapshot,
     invoke_user_turn,
+    start_new_chat,
     store_invoke_result,
     visible_chat_error,
 )
@@ -216,8 +221,69 @@ def test_escaped_invoke_error_is_shown_when_checkpoint_is_empty():
 
 def test_ensure_thread_id_reuses_existing():
     """A session keeps one thread id."""
-    session: dict[str, object] = {"agent_thread_id": "kept"}
+    session: dict[str, object] = {THREAD_ID_KEY: "kept"}
     assert ensure_thread_id(session) == "kept"
+
+
+def test_ensure_thread_id_mints_when_missing():
+    """A new session gets a thread id and then reuses it."""
+    session: dict[str, object] = {}
+    first = ensure_thread_id(session)
+    assert first
+    assert session[THREAD_ID_KEY] == first
+    assert ensure_thread_id(session) == first
+
+
+def test_start_new_chat_replaces_thread_and_clears_error():
+    """New chat is a new thread id. A leftover chat error does not follow."""
+    session: dict[str, object] = {
+        THREAD_ID_KEY: "old-thread",
+        CHAT_ERROR_KEY: "connection refused",
+    }
+    new_id = start_new_chat(session)
+    assert new_id != "old-thread"
+    assert session[THREAD_ID_KEY] == new_id
+    assert CHAT_ERROR_KEY not in session
+
+
+def test_helpers_reuse_one_snapshot():
+    """Readers do not hit the checkpointer again when a snapshot is passed."""
+
+    class _CountGraph:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def get_state(self, config: object) -> object:
+            self.calls += 1
+
+            class Snap:
+                values = {"messages": [], "error": None, "profile_summary": None}
+                interrupts = ()
+
+            return Snap()
+
+    graph = _CountGraph()
+    snap = graph_snapshot(graph, "chat-once")
+    graph_messages(graph, "chat-once", snap=snap)
+    graph_error(graph, "chat-once", snap=snap)
+    graph_interrupt_payload(graph, "chat-once", snap=snap)
+    graph_profile_summary(graph, "chat-once", snap=snap)
+    assert graph.calls == 1
+
+
+def test_new_thread_id_does_not_see_prior_messages(graph):
+    """thread_id in the graph config isolates one conversation from another."""
+    invoke_user_turn(
+        graph,
+        user_text="one",
+        hitl_mode=HITL_MODE_STANDARD,
+        thread_id="chat-kept",
+    )
+    assert graph_messages(graph, "chat-fresh") == []
+    assert [m["content"] for m in graph_messages(graph, "chat-kept")] == [
+        "one",
+        "plain reply",
+    ]
 
 
 def test_chat_module_does_not_import_system_prompt():

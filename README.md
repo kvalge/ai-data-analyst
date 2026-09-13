@@ -72,8 +72,9 @@ Set the four `OLLAMA_MODEL_*` names (and optional `DB_*`) in `.env`.
 streamlit run src/ui/app.py
 ```
 
-**Sidebar:** HITL mode (Guided / Standard / Auto; default Standard), uploads,
-source list, optional Postgres test. **Main:** preview and profile panels
+**Sidebar:** HITL mode (Guided / Standard / Auto; default Standard), New
+chat (a new graph thread for this browser session), uploads, source
+list, optional Postgres test. **Main:** preview and profile panels
 (they can stay open together; close either from its heading), then chat.
 
 In **Guided** mode, chat pauses after schema, then data quality, then EDA

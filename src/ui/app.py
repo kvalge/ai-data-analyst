@@ -26,7 +26,7 @@ from src.storage.registry import RegistryError
 from src.tools.list_sources import list_available_sources
 from src.tools.profile_source import ProfileError, profile_source
 from src.tools.read_sample import read_file_sample
-from src.ui.chat import render_chat
+from src.ui.chat import render_chat, start_new_chat
 from src.ui.hitl import HITL_MODE_KEY, HitlMode, ensure_hitl_mode
 from src.ui.profile import (
     PROFILE_SOURCE_ID_KEY,
@@ -55,6 +55,9 @@ with st.sidebar:
     st.header("Session")
     ensure_hitl_mode(st.session_state)
     st.radio("HITL mode", options=list(HitlMode), key=HITL_MODE_KEY)
+    if st.button("New chat", key="new_chat"):
+        start_new_chat(st.session_state)
+        st.rerun()
 
     st.subheader("Postgres")
     if postgres_configured(settings):

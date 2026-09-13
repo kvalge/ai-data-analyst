@@ -49,6 +49,14 @@ def ensure_thread_id(session_state: Any) -> str:
     return thread_id
 
 
+def start_new_chat(session_state: Any) -> str:
+    """Mint a new thread id. The previous checkpoint is left unused."""
+    thread_id = str(uuid.uuid4())
+    session_state[THREAD_ID_KEY] = thread_id
+    session_state.pop(CHAT_ERROR_KEY, None)
+    return thread_id
+
+
 def ensure_graph(session_state: Any, settings: Settings) -> Any:
     """Reuse the compiled graph so MemorySaver keeps the thread."""
     graph = session_state.get(GRAPH_KEY)
@@ -63,19 +71,31 @@ def thread_config(thread_id: str) -> dict[str, Any]:
     return {"configurable": {"thread_id": thread_id}}
 
 
-def graph_messages(graph: Any, thread_id: str) -> list[AgentMessage]:
+def graph_snapshot(graph: Any, thread_id: str) -> Any:
+    """One checkpointer read for this thread."""
+    return graph.get_state(thread_config(thread_id))
+
+
+def _snapshot_values(snap: Any) -> dict[str, Any]:
+    values = getattr(snap, "values", None) or {}
+    return values if isinstance(values, dict) else {}
+
+
+def graph_messages(
+    graph: Any, thread_id: str, *, snap: Any | None = None
+) -> list[AgentMessage]:
     """Return checkpointed user/assistant messages. Not the system prompt."""
-    snap = graph.get_state(thread_config(thread_id))
-    values = snap.values or {}
-    messages = values.get("messages") or []
+    state = snap if snap is not None else graph_snapshot(graph, thread_id)
+    messages = _snapshot_values(state).get("messages") or []
     return list(messages)
 
 
-def graph_error(graph: Any, thread_id: str) -> str | None:
+def graph_error(
+    graph: Any, thread_id: str, *, snap: Any | None = None
+) -> str | None:
     """Return the last visible graph error, if any."""
-    snap = graph.get_state(thread_config(thread_id))
-    values = snap.values or {}
-    error = values.get("error")
+    state = snap if snap is not None else graph_snapshot(graph, thread_id)
+    error = _snapshot_values(state).get("error")
     if isinstance(error, str) and error.strip():
         return error
     return None
@@ -102,10 +122,12 @@ def visible_chat_error(
     return None
 
 
-def graph_interrupt_payload(graph: Any, thread_id: str) -> dict[str, Any] | None:
+def graph_interrupt_payload(
+    graph: Any, thread_id: str, *, snap: Any | None = None
+) -> dict[str, Any] | None:
     """Return a known interrupt value, if the graph is paused."""
-    snap = graph.get_state(thread_config(thread_id))
-    interrupts = getattr(snap, "interrupts", ()) or ()
+    state = snap if snap is not None else graph_snapshot(graph, thread_id)
+    interrupts = getattr(state, "interrupts", ()) or ()
     if not interrupts:
         return None
     value = getattr(interrupts[0], "value", None)
@@ -114,11 +136,12 @@ def graph_interrupt_payload(graph: Any, thread_id: str) -> dict[str, Any] | None
     return None
 
 
-def graph_profile_summary(graph: Any, thread_id: str) -> dict[str, Any] | None:
+def graph_profile_summary(
+    graph: Any, thread_id: str, *, snap: Any | None = None
+) -> dict[str, Any] | None:
     """Return the checkpointed compact profile, if one was written."""
-    snap = graph.get_state(thread_config(thread_id))
-    values = snap.values or {}
-    summary = values.get("profile_summary")
+    state = snap if snap is not None else graph_snapshot(graph, thread_id)
+    summary = _snapshot_values(state).get("profile_summary")
     if isinstance(summary, dict):
         return summary
     return None
@@ -193,16 +216,19 @@ def render_chat(
     """Show the transcript and send typed text into the graph."""
     graph = ensure_graph(st.session_state, settings)
     thread_id = ensure_thread_id(st.session_state)
-    for message in graph_messages(graph, thread_id):
+    snap = graph_snapshot(graph, thread_id)
+    for message in graph_messages(graph, thread_id, snap=snap):
         role = message.get("role")
         if role not in {"user", "assistant"}:
             continue
         with st.chat_message(role):
             st.write(message.get("content", ""))
-    error = visible_chat_error(graph_error(graph, thread_id), st.session_state)
+    error = visible_chat_error(
+        graph_error(graph, thread_id, snap=snap), st.session_state
+    )
     if error:
         st.error(error)
-    pending = graph_interrupt_payload(graph, thread_id)
+    pending = graph_interrupt_payload(graph, thread_id, snap=snap)
     if pending is not None:
         kind = pending.get("kind")
         decision: dict[str, Any] | None = None
@@ -211,7 +237,7 @@ def render_chat(
             decision = render_source_confirm(pending)
         elif kind == KIND_PROFILE_STEP:
             decision = render_profile_pause(
-                pending, graph_profile_summary(graph, thread_id)
+                pending, graph_profile_summary(graph, thread_id, snap=snap)
             )
             caption = (
                 "Continue, skip remaining, or abort profiling before chatting."
