@@ -87,6 +87,9 @@ artifact paths from earlier tools. A `.csv` (or `.parquet`) path under
 `ARTIFACT_DIR` is shown as a table in chat. A `.png` path under
 `ARTIFACT_DIR` is shown as an image. The agent is told to save those
 files in the sandbox work dir and not paste large tables into the chat.
+When a last-tool summary or artifact path exists, chat offers
+**Download report.md** (summary line and paths only, not tables).
+The file name includes a short thread id and UTC time.
 
 In **Guided** mode, chat pauses after schema, then data quality, then EDA
 (Continue / Skip remaining / Abort). Standard and Auto run those steps

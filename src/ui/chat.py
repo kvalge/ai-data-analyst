@@ -29,6 +29,7 @@ from src.ui.hitl import HITL_MODE_KEY, resolve_hitl_mode
 from src.ui.load_pause import render_load_pause
 from src.ui.profile_pause import render_profile_pause
 from src.ui.artifacts import render_chart_artifacts, render_table_artifacts
+from src.ui.report import render_report_download
 from src.ui.source_confirm import render_source_confirm
 
 _INTERRUPT_KINDS = frozenset(
@@ -249,7 +250,8 @@ def render_chat(
             continue
         with st.chat_message(role):
             st.write(message.get("content", ""))
-    raw_artifacts = _snapshot_values(snap).get("artifacts") or []
+    values = _snapshot_values(snap)
+    raw_artifacts = values.get("artifacts") or []
     artifact_paths = [
         item
         for item in raw_artifacts
@@ -260,6 +262,11 @@ def render_chat(
     )
     render_chart_artifacts(
         artifact_paths, artifact_dir=settings.artifact_dir
+    )
+    render_report_download(
+        values.get("last_tool_result"),
+        artifact_paths,
+        thread_id=thread_id,
     )
     error = visible_chat_error(
         graph_error(graph, thread_id, snap=snap), st.session_state
