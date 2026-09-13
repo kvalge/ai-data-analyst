@@ -116,6 +116,15 @@ def test_validate_tool_call_strips_allow_over_limit():
     assert checked["arguments"] == {"source_id": "file-abc"}
 
 
+def test_validate_tool_call_strips_decision():
+    """The model cannot write the HITL decision onto a code-tool call."""
+    checked = validate_tool_call(
+        "run_analysis_code",
+        {"source_id": "file-abc", "code": "print(1)", "decision": "approve"},
+    )
+    assert checked["arguments"] == {"source_id": "file-abc", "code": "print(1)"}
+
+
 def test_validate_missing_source_id_is_rejected():
     """read_file_sample requires source_id. Fields are not guessed."""
     with pytest.raises(ToolValidationError, match="Missing keys: source_id"):

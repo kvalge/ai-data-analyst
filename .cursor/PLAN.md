@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission. Code `# TODO` / `# FIXME` comments are also listed under **Open TODOs (code)** below.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** **3.12 done.** **3.13 done.** **4.1 done.** **4.2 done.** **4.3 done.** **4.4 done.** **4.5 done.** **4.6 done.** **4.7 done.** **4.8 done.** **4.9 done.** **4.10 done.** **4.11 done.** Next step: **4.12**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** **3.12 done.** **3.13 done.** **4.1 done.** **4.2 done.** **4.3 done.** **4.4 done.** **4.5 done.** **4.6 done.** **4.7 done.** **4.8 done.** **4.9 done.** **4.10 done.** **4.11 done.** **4.12 done.** Next step: **5.1**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -442,7 +442,7 @@ No sandbox code execution yet. Tools: `list_available_sources`, `read_file_sampl
 
 - [x] Still write audit log.
 - [x] Test: Auto executes without interrupt; Standard interrupts.
-- Auto is already outside `should_pause_generated_code`. Graph test: Auto runs `run_analysis_code` with no `__interrupt__` and appends the existing tool-use audit line (tool, source_id, timestamp; not code). Standard still pauses (4.8). Logging generated text and the HITL decision is 4.12.
+- Auto is already outside `should_pause_generated_code`. Graph test: Auto runs `run_analysis_code` with no `__interrupt__` and appends a tool-use audit line. Standard still pauses (4.8). Generated text, HITL decision, and sandbox outcome are on the audit line (4.12).
 
 ### 4.10 Full-file load interrupt over threshold
 
@@ -459,8 +459,9 @@ No sandbox code execution yet. Tools: `list_available_sources`, `read_file_sampl
 
 ### 4.12 Audit: generated code/SQL
 
-- Log code/SQL text, decision (approve/edit/reject), sandbox outcome.
-- Test.
+- [x] Log code/SQL text, decision (approve/edit/reject), sandbox outcome.
+- [x] Test.
+- Code-tool records add `code`, `decision` (`approve` / `edit_run` / `reject` / `auto`), and `outcome` (`success` / `error` / `rejected`). Other tools stay identities only. Reject and sandbox errors write a line; a malformed resume is `decision=reject` with `outcome=error`, not a user reject. Stdout, params, and rows are not logged. `decision` is injected by the graph, not the LLM.
 
 ---
 
@@ -655,6 +656,6 @@ Not current-step work and not code `# TODO`s. Revisit when the listed step runs.
 
 ## Current focus
 
-**4.11 done.** Next: **4.12 Audit: generated code/SQL**.
-Do not start 4.12 until you say to proceed.
-Standard and Guided show generated SQL/Python in an editable textarea. Approve runs the (possibly edited) text in the graph; Reject does not. The widget does not execute.
+**4.12 done.** Next: **5.1 Thread id in Streamlit**.
+Do not start 5.1 until you say to proceed.
+Generated SQL/Python audit lines include the code, HITL decision, and sandbox outcome. Other tools stay identities only.

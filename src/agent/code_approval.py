@@ -80,12 +80,14 @@ def apply_code_decision(
     if action == ACTION_REJECT:
         return {
             "error": "Generated code was rejected.",
+            "decision": ACTION_REJECT,
             "pending_tool": None,
             "pending_interrupt": None,
         }
     if action == ACTION_APPROVE:
         return {
             "arguments": dict(arguments),
+            "decision": ACTION_APPROVE,
             "pending_interrupt": None,
             "error": None,
         }
@@ -94,6 +96,7 @@ def apply_code_decision(
         if not isinstance(edited, str) or not edited.strip():
             return {
                 "error": "Edited code is empty.",
+                "decision": ACTION_EDIT_RUN,
                 "pending_tool": None,
                 "pending_interrupt": None,
             }
@@ -102,6 +105,7 @@ def apply_code_decision(
         updated[field] = strip_markdown_fences(edited)
         return {
             "arguments": updated,
+            "decision": ACTION_EDIT_RUN,
             "pending_interrupt": None,
             "error": None,
         }

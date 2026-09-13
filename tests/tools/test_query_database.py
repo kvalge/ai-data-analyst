@@ -10,7 +10,12 @@ from pathlib import Path
 
 import pytest
 
-from src.agent.audit import audit_log_path, default_audit_dir
+from src.agent.audit import (
+    DECISION_AUTO,
+    OUTCOME_SUCCESS,
+    audit_log_path,
+    default_audit_dir,
+)
 from src.agent.execute import run_allowlisted_tool
 from src.config import load_settings
 from src.db.postgres import DatabaseError
@@ -184,8 +189,8 @@ def test_driver_error_log_omits_sql_and_params(
     assert "North" not in caplog.text
 
 
-def test_query_database_audit_line_has_connection_id_not_sql(tmp_path: Path):
-    """run_allowlisted_tool injects connect and writes identities only."""
+def test_query_database_audit_line_has_connection_id_and_sql(tmp_path: Path):
+    """run_allowlisted_tool writes SQL and identities, not params or rows."""
     settings = _settings(tmp_path)
     connection_id = postgres_source_id(settings)
     cursor = FakeCursor([_SALES_ROW])
@@ -218,9 +223,12 @@ def test_query_database_audit_line_has_connection_id_not_sql(tmp_path: Path):
     record = json.loads(line)
     assert record["tool"] == "query_database"
     assert record["source_id"] == connection_id
-    assert _SELECT not in line
+    assert record["code"] == _SELECT
+    assert record["decision"] == DECISION_AUTO
+    assert record["outcome"] == OUTCOME_SUCCESS
     assert "North" not in line
     assert "super-secret-password" not in line
+    assert "rows" not in record
 
 
 def test_query_database_contract_is_complete():

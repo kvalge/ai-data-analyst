@@ -34,7 +34,8 @@ Auto runs it without asking; the tool-use audit line is still written.
   malformed tool JSON or unknown tool is retried once, then shown as an
   error; the app does not invent a tool call. Successful tool use appends
   one JSONL line under `data/logs/audit.jsonl` (tool, source_id, timestamp;
-  never file contents).
+  generated SQL/Python also logs the code, HITL decision, and sandbox
+  outcome; never file contents or dataset rows).
 
 ## What is not here yet
 

@@ -13,7 +13,17 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import interrupt
 
+from src.agent.audit import (
+    DECISION_AUTO,
+    OUTCOME_ERROR,
+    OUTCOME_REJECTED,
+    append_tool_use,
+    code_text_for_audit,
+    default_audit_dir,
+    source_id_for_audit,
+)
 from src.agent.code_approval import (
+    ACTION_REJECT,
     CODE_TOOLS,
     apply_code_decision,
     build_code_interrupt,
@@ -367,6 +377,25 @@ def build_graph(
         _LOG.info("graph agent requested tool=%s", call["name"])
         return {"pending_tool": call, "error": None}
 
+    def _append_code_audit(
+        name: str,
+        arguments: dict[str, Any],
+        *,
+        decision: str,
+        outcome: str,
+    ) -> None:
+        """Log generated SQL/Python, the HITL decision, and sandbox outcome."""
+        append_tool_use(
+            default_audit_dir(settings.upload_dir),
+            tool=name,
+            source_id=source_id_for_audit(arguments),
+            code=code_text_for_audit(
+                name, arguments, settings.max_prompt_chars
+            ),
+            decision=decision,
+            outcome=outcome,
+        )
+
     def execute_tool_node(state: AgentState) -> dict[str, Any]:
         pending = state.get("pending_tool")
         if not isinstance(pending, dict):
@@ -377,6 +406,7 @@ def build_graph(
         arguments = pending.get("arguments")
         if not isinstance(arguments, dict):
             arguments = {}
+        decision = DECISION_AUTO
         if name in CODE_TOOLS and should_pause_generated_code(
             str(state.get("hitl_mode") or "")
         ):
@@ -395,7 +425,23 @@ def build_graph(
                 name=name,
                 arguments=arguments,
             )
+            raw_decision = applied.get("decision")
+            decision = (
+                raw_decision
+                if isinstance(raw_decision, str) and raw_decision
+                else ACTION_REJECT
+            )
             if applied.get("error"):
+                _append_code_audit(
+                    name,
+                    arguments,
+                    decision=decision,
+                    outcome=(
+                        OUTCOME_REJECTED
+                        if raw_decision == ACTION_REJECT
+                        else OUTCOME_ERROR
+                    ),
+                )
                 return {"error": applied["error"], "pending_tool": None}
             next_args = applied.get("arguments")
             arguments = next_args if isinstance(next_args, dict) else {}
@@ -406,9 +452,17 @@ def build_graph(
                 settings,
                 include_postgres=include_postgres,
                 connect=connect,
+                decision=decision if name in CODE_TOOLS else None,
             )
         except Exception as exc:
             _LOG.info("graph tool failed name=%s", name)
+            if name in CODE_TOOLS:
+                _append_code_audit(
+                    name,
+                    arguments,
+                    decision=decision,
+                    outcome=OUTCOME_ERROR,
+                )
             return {"error": str(exc), "pending_tool": None}
         if name == "load_full_file" and is_over_limit_load(result):
             _LOG.info(

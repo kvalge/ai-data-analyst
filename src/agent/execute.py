@@ -10,10 +10,14 @@ from collections.abc import Callable, Mapping
 from typing import Any
 
 from src.agent.audit import (
+    DECISION_AUTO,
+    OUTCOME_SUCCESS,
     append_tool_use,
+    code_text_for_audit,
     default_audit_dir,
     source_id_for_audit,
 )
+from src.agent.code_approval import CODE_TOOLS
 from src.agent.json_output import (
     STRICT_RETRY_INSTRUCTION,
     JsonParseError,
@@ -37,6 +41,7 @@ _APP_ARG_KEYS = frozenset(
         "include_postgres",
         "connect",
         "allow_over_limit",
+        "decision",
     }
 )
 
@@ -121,11 +126,14 @@ def run_allowlisted_tool(
     include_postgres: bool = False,
     connect: Callable[..., Any] | None = None,
     allow_over_limit: bool = False,
+    decision: str | None = None,
 ) -> dict[str, Any]:
     """Look up `name` on the registry, inject app args, and run the handler.
 
     `connect` is a test seam for query_database. `allow_over_limit` is
-    injected after a full-file load approval. The LLM cannot supply either.
+    injected after a full-file load approval. `decision` is the HITL
+    action for generated code (or auto when omitted). The LLM cannot
+    supply these.
     """
     checked = validate_tool_call(name, arguments)
     kwargs = _injected_kwargs(
@@ -138,12 +146,37 @@ def run_allowlisted_tool(
     )
     _LOG.info("execute tool=%s", checked["name"])
     result = TOOL_REGISTRY[checked["name"]].handler(**kwargs)
-    append_tool_use(
-        default_audit_dir(settings.upload_dir),
-        tool=checked["name"],
-        source_id=source_id_for_audit(checked["arguments"]),
+    _write_tool_audit(
+        settings,
+        checked["name"],
+        checked["arguments"],
+        decision,
     )
     return result
+
+
+def _write_tool_audit(
+    settings: Settings,
+    name: str,
+    arguments: dict[str, Any],
+    decision: str | None,
+) -> None:
+    """Write identities, plus code/decision/outcome for generated SQL or Python."""
+    log_dir = default_audit_dir(settings.upload_dir)
+    source_id = source_id_for_audit(arguments)
+    if name in CODE_TOOLS:
+        append_tool_use(
+            log_dir,
+            tool=name,
+            source_id=source_id,
+            code=code_text_for_audit(
+                name, arguments, settings.max_prompt_chars
+            ),
+            decision=decision or DECISION_AUTO,
+            outcome=OUTCOME_SUCCESS,
+        )
+        return
+    append_tool_use(log_dir, tool=name, source_id=source_id)
 
 
 def _validate_arg_types(payload: dict[str, Any], schema: Mapping[str, Any]) -> None:

@@ -11,11 +11,15 @@ from pathlib import Path
 import pytest
 
 from src.agent.audit import (
+    DECISION_AUTO,
+    OUTCOME_SUCCESS,
     append_tool_use,
     audit_log_path,
+    code_text_for_audit,
     default_audit_dir,
     source_id_for_audit,
 )
+from src.agent.code_approval import TOOL_RUN_ANALYSIS_CODE
 from src.agent.execute import run_allowlisted_tool
 from src.config import load_settings
 from src.storage.registry import save_file_source
@@ -147,6 +151,41 @@ def test_append_tool_use_writes_injected_timestamp(tmp_path: Path):
         "tool": "profile_source",
         "source_id": "file-a",
     }
+
+
+def test_append_tool_use_writes_code_decision_and_outcome(tmp_path: Path):
+    """A generated-code record stores the text, HITL decision, and outcome."""
+    when = datetime(2026, 9, 13, 10, 0, tzinfo=timezone.utc)
+    record = append_tool_use(
+        tmp_path / "logs",
+        tool="run_analysis_code",
+        source_id="file-a",
+        now=when,
+        code="print(1)",
+        decision=DECISION_AUTO,
+        outcome=OUTCOME_SUCCESS,
+    )
+    assert record == {
+        "timestamp": "2026-09-13T10:00:00+00:00",
+        "tool": "run_analysis_code",
+        "source_id": "file-a",
+        "code": "print(1)",
+        "decision": DECISION_AUTO,
+        "outcome": OUTCOME_SUCCESS,
+    }
+    assert "rows" not in record
+    assert "stdout" not in record
+
+
+def test_code_text_for_audit_is_capped():
+    """Over-long generated text is truncated. Dataset rows are not added."""
+    text = code_text_for_audit(
+        TOOL_RUN_ANALYSIS_CODE,
+        {"source_id": "file-a", "code": "print(1)" + "x" * 50},
+        limit=8,
+    )
+    assert text == "print(1)"
+    assert "rows" not in text
 
 
 def test_source_id_for_audit_does_not_invent_an_id():

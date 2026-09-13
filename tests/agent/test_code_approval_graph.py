@@ -11,6 +11,14 @@ from typing import Any
 import pytest
 from langgraph.types import Command
 
+from src.agent.audit import (
+    DECISION_AUTO,
+    OUTCOME_ERROR,
+    OUTCOME_REJECTED,
+    OUTCOME_SUCCESS,
+    audit_log_path,
+    default_audit_dir,
+)
 from src.agent.code_approval import (
     ACTION_APPROVE,
     ACTION_EDIT_RUN,
@@ -19,7 +27,6 @@ from src.agent.code_approval import (
     TOOL_QUERY_DATABASE,
     TOOL_RUN_ANALYSIS_CODE,
 )
-from src.agent.audit import audit_log_path, default_audit_dir
 from src.agent.graph import build_graph
 from src.agent.state import (
     HITL_MODE_AUTO,
@@ -43,6 +50,7 @@ _PLACEHOLDER_MODELS = {
 _THREAD = {"configurable": {"thread_id": "code-approval-thread"}}
 _SQL_THREAD = {"configurable": {"thread_id": "code-approval-sql-thread"}}
 _AUTO_THREAD = {"configurable": {"thread_id": "code-approval-auto-thread"}}
+_INVALID_THREAD = {"configurable": {"thread_id": "code-approval-invalid-thread"}}
 _PRINT = "print(1)\n"
 _SELECT = "SELECT date, region, revenue FROM sales"
 
@@ -80,6 +88,11 @@ def _tool_json(source_id: str, code: str = _PRINT) -> str:
     )
 
 
+def _audit_record(settings: Settings) -> dict[str, Any]:
+    path = audit_log_path(default_audit_dir(settings.upload_dir))
+    return json.loads(path.read_text(encoding="utf-8").strip())
+
+
 def _interrupt_value(result: dict[str, Any]) -> dict[str, Any]:
     items = result.get("__interrupt__") or []
     assert items, "expected an approve_code interrupt"
@@ -104,12 +117,22 @@ def test_auto_runs_analysis_code_without_interrupt(settings: Settings):
     assert result["error"] is None
     assert "1" in result["last_tool_result"]["stdout"]
     assert result["messages"][-1]["content"] == "printed one"
-    path = audit_log_path(default_audit_dir(settings.upload_dir))
-    record = json.loads(path.read_text(encoding="utf-8").strip())
+    record = _audit_record(settings)
     assert record["tool"] == TOOL_RUN_ANALYSIS_CODE
     assert record["source_id"] == source_id
-    assert set(record) == {"timestamp", "tool", "source_id"}
-    assert "code" not in record
+    assert record["code"] == _PRINT.strip()
+    assert record["decision"] == DECISION_AUTO
+    assert record["outcome"] == OUTCOME_SUCCESS
+    assert set(record) == {
+        "timestamp",
+        "tool",
+        "source_id",
+        "code",
+        "decision",
+        "outcome",
+    }
+    assert "rows" not in record
+    assert "stdout" not in record
 
 
 def test_standard_interrupts_before_run_analysis_code(settings: Settings):
@@ -187,6 +210,70 @@ def test_reject_does_not_execute(settings: Settings):
     assert result["pending_tool"] is None
     if settings.artifact_dir.is_dir():
         assert list(settings.artifact_dir.rglob("*")) == []
+    record = _audit_record(settings)
+    assert record["decision"] == ACTION_REJECT
+    assert record["outcome"] == OUTCOME_REJECTED
+    assert record["code"] == _PRINT.strip()
+    assert "stdout" not in record
+
+
+def test_invalid_resume_audit_is_not_a_user_reject(settings: Settings):
+    """A malformed resume does not run and is audited as error, not reject."""
+    source_id = _source_id(settings)
+
+    def fake_complete(prompt: str, **kwargs: Any) -> str:
+        return _tool_json(source_id)
+
+    graph = build_graph(settings=settings, complete_fn=fake_complete)
+    graph.invoke(_user_turn("print one"), _INVALID_THREAD)
+    result = graph.invoke(Command(resume="nonsense"), _INVALID_THREAD)
+    assert result["error"] == "Code approval decision is invalid."
+    assert result["last_tool_result"] is None
+    record = _audit_record(settings)
+    assert record["decision"] == ACTION_REJECT
+    assert record["outcome"] == OUTCOME_ERROR
+    assert record["code"] == _PRINT.strip()
+    assert "stdout" not in record
+
+
+def test_edit_run_audit_records_edited_code(settings: Settings):
+    """The audit line stores the edited text, not the original snippet."""
+    source_id = _source_id(settings)
+    replies = [_tool_json(source_id, "print(0)\n"), "printed seven"]
+
+    def fake_complete(prompt: str, **kwargs: Any) -> str:
+        return replies.pop(0)
+
+    graph = build_graph(settings=settings, complete_fn=fake_complete)
+    graph.invoke(_user_turn("print something"), _THREAD)
+    graph.invoke(
+        Command(resume={"action": ACTION_EDIT_RUN, "code": "print(7)\n"}),
+        _THREAD,
+    )
+    record = _audit_record(settings)
+    assert record["decision"] == ACTION_EDIT_RUN
+    assert record["outcome"] == OUTCOME_SUCCESS
+    assert record["code"] == "print(7)"
+    assert "print(0)" not in record["code"]
+
+
+def test_sandbox_error_audit_records_error_outcome(settings: Settings):
+    """A failed sandbox still writes code and outcome=error, not stdout."""
+    source_id = _source_id(settings)
+
+    def fake_complete(prompt: str, **kwargs: Any) -> str:
+        return _tool_json(source_id, "print(1 / 0)\n")
+
+    graph = build_graph(settings=settings, complete_fn=fake_complete)
+    graph.invoke(_user_turn("divide"), _THREAD)
+    result = graph.invoke(Command(resume={"action": ACTION_APPROVE}), _THREAD)
+    assert result["error"]
+    record = _audit_record(settings)
+    assert record["decision"] == ACTION_APPROVE
+    assert record["outcome"] == OUTCOME_ERROR
+    assert record["code"] == "print(1 / 0)"
+    assert "stdout" not in record
+    assert "rows" not in record
 
 
 def test_standard_interrupts_before_query_database(tmp_path: Path):
