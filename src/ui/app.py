@@ -56,7 +56,9 @@ with st.sidebar:
     ensure_hitl_mode(st.session_state)
     st.radio("HITL mode", options=list(HitlMode), key=HITL_MODE_KEY)
     if st.button("New chat", key="new_chat"):
-        start_new_chat(st.session_state)
+        start_new_chat(
+            st.session_state, checkpoint_path=settings.checkpoint_path
+        )
         st.rerun()
 
     st.subheader("Postgres")

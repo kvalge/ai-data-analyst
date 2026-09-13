@@ -6,11 +6,17 @@ from __future__ import annotations
 
 import logging
 import uuid
+from pathlib import Path
 from typing import Any
 
 import streamlit as st
 from langgraph.types import Command
 
+from src.agent.checkpoint import (
+    load_persisted_thread_id,
+    persist_thread_id,
+    sqlite_checkpointer,
+)
 from src.agent.code_approval import KIND_APPROVE_CODE
 from src.agent.confirm_sources import KIND_CONFIRM_SOURCES
 from src.agent.graph import build_graph
@@ -40,28 +46,45 @@ THREAD_ID_KEY = "agent_thread_id"
 CHAT_ERROR_KEY = "chat_error"
 
 
-def ensure_thread_id(session_state: Any) -> str:
-    """Create one graph thread id for this Streamlit session."""
+def ensure_thread_id(
+    session_state: Any, *, checkpoint_path: Path | None = None
+) -> str:
+    """Reuse the session thread id, or restore the one next to CHECKPOINT_PATH."""
     thread_id = session_state.get(THREAD_ID_KEY)
-    if not isinstance(thread_id, str) or not thread_id.strip():
-        thread_id = str(uuid.uuid4())
-        session_state[THREAD_ID_KEY] = thread_id
+    if isinstance(thread_id, str) and thread_id.strip():
+        return thread_id
+    if checkpoint_path is not None:
+        stored = load_persisted_thread_id(checkpoint_path)
+        if stored:
+            session_state[THREAD_ID_KEY] = stored
+            return stored
+    thread_id = str(uuid.uuid4())
+    session_state[THREAD_ID_KEY] = thread_id
+    if checkpoint_path is not None:
+        persist_thread_id(checkpoint_path, thread_id)
     return thread_id
 
 
-def start_new_chat(session_state: Any) -> str:
+def start_new_chat(
+    session_state: Any, *, checkpoint_path: Path | None = None
+) -> str:
     """Mint a new thread id. The previous checkpoint is left unused."""
     thread_id = str(uuid.uuid4())
     session_state[THREAD_ID_KEY] = thread_id
     session_state.pop(CHAT_ERROR_KEY, None)
+    if checkpoint_path is not None:
+        persist_thread_id(checkpoint_path, thread_id)
     return thread_id
 
 
 def ensure_graph(session_state: Any, settings: Settings) -> Any:
-    """Reuse the compiled graph so MemorySaver keeps the thread."""
+    """Reuse the compiled graph so the sqlite checkpointer stays open."""
     graph = session_state.get(GRAPH_KEY)
     if graph is None:
-        graph = build_graph(settings=settings)
+        graph = build_graph(
+            settings=settings,
+            checkpointer=sqlite_checkpointer(settings.checkpoint_path),
+        )
         session_state[GRAPH_KEY] = graph
     return graph
 
@@ -215,7 +238,9 @@ def render_chat(
 ) -> None:
     """Show the transcript and send typed text into the graph."""
     graph = ensure_graph(st.session_state, settings)
-    thread_id = ensure_thread_id(st.session_state)
+    thread_id = ensure_thread_id(
+        st.session_state, checkpoint_path=settings.checkpoint_path
+    )
     snap = graph_snapshot(graph, thread_id)
     for message in graph_messages(graph, thread_id, snap=snap):
         role = message.get("role")

@@ -165,10 +165,12 @@ def build_graph(
     complete_fn: CompleteFn | None = None,
     include_postgres: bool = False,
     connect: Callable[..., Any] | None = None,
+    checkpointer: Any | None = None,
 ) -> Any:
     """Compile START → confirm_sources → profile nodes → agent ⇄ execute_tool.
 
     `connect` is a test seam for query_database. The LLM cannot supply it.
+    Tests omit `checkpointer` and get MemorySaver. The app passes SqliteSaver.
     """
     completer = complete_fn or complete
 
@@ -531,4 +533,4 @@ def build_graph(
         route_after_execute,
         {"agent": "agent", END: END},
     )
-    return graph.compile(checkpointer=MemorySaver())
+    return graph.compile(checkpointer=checkpointer or MemorySaver())

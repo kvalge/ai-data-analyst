@@ -9,12 +9,13 @@ from typing import Any
 
 import pytest
 
+from src.agent.checkpoint import load_persisted_thread_id, persist_thread_id
+from src.agent.confirm_sources import REASON_NO_SOURCES
 from src.agent.graph import build_graph
 from src.agent.llm import LlmError
 from src.agent.state import HITL_MODE_STANDARD
 from src.config import Settings, load_settings
 from src.storage.registry import save_file_source
-from src.agent.confirm_sources import REASON_NO_SOURCES
 from src.ui.chat import (
     CHAT_ERROR_KEY,
     THREAD_ID_KEY,
@@ -244,6 +245,33 @@ def test_start_new_chat_replaces_thread_and_clears_error():
     assert new_id != "old-thread"
     assert session[THREAD_ID_KEY] == new_id
     assert CHAT_ERROR_KEY not in session
+
+
+def test_ensure_thread_id_restores_sidecar(tmp_path: Path):
+    """A fresh session picks up the thread id written next to CHECKPOINT_PATH."""
+    path = tmp_path / "graph.sqlite"
+    persist_thread_id(path, "stored-thread")
+    session: dict[str, object] = {}
+    assert ensure_thread_id(session, checkpoint_path=path) == "stored-thread"
+    assert session[THREAD_ID_KEY] == "stored-thread"
+
+
+def test_ensure_thread_id_writes_sidecar_when_minting(tmp_path: Path):
+    """The first session on a path records the minted thread id."""
+    path = tmp_path / "graph.sqlite"
+    session: dict[str, object] = {}
+    minted = ensure_thread_id(session, checkpoint_path=path)
+    assert load_persisted_thread_id(path) == minted
+
+
+def test_start_new_chat_writes_sidecar(tmp_path: Path):
+    """New chat replaces the stored thread so a restart opens the new one."""
+    path = tmp_path / "graph.sqlite"
+    persist_thread_id(path, "old-thread")
+    session: dict[str, object] = {THREAD_ID_KEY: "old-thread"}
+    new_id = start_new_chat(session, checkpoint_path=path)
+    assert load_persisted_thread_id(path) == new_id
+    assert new_id != "old-thread"
 
 
 def test_helpers_reuse_one_snapshot():
