@@ -19,7 +19,6 @@ from src.agent.audit import (
 )
 from src.agent.code_approval import CODE_TOOLS
 from src.agent.json_output import (
-    STRICT_RETRY_INSTRUCTION,
     JsonParseError,
     JsonSchemaError,
     strip_markdown_fences,
@@ -106,17 +105,6 @@ def interpret_model_reply(text: str) -> dict[str, Any] | None:
     if call is None:
         return None
     return validate_tool_call(call["name"], call["arguments"])
-
-
-def retry_prompt_after_validation(base_prompt: str, error: str) -> str:
-    """Append the 3.2 strict instruction and the validation error. Do not guess."""
-    return "\n\n".join(
-        (
-            base_prompt,
-            STRICT_RETRY_INSTRUCTION,
-            f"Previous model output failed validation: {error}",
-        )
-    )
 
 
 def run_allowlisted_tool(

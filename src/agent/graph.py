@@ -43,7 +43,6 @@ from src.agent.confirm_sources import (
 from src.agent.execute import (
     ToolValidationError,
     interpret_model_reply,
-    retry_prompt_after_validation,
     run_allowlisted_tool,
 )
 from src.agent.json_output import (
@@ -51,6 +50,7 @@ from src.agent.json_output import (
     RETRY_STRICT,
     JsonOutputError,
     decide_after_parse_failure,
+    retry_prompt_after_validation,
 )
 from src.agent.load_approval import (
     apply_load_decision,
@@ -386,7 +386,13 @@ def build_graph(
                 return {"error": str(exc), "pending_tool": None}
             _LOG.info("graph tool validation retry")
             try:
-                reply = _llm_reply(retry_prompt_after_validation(prompt, str(exc)))
+                reply = _llm_reply(
+                    retry_prompt_after_validation(
+                        prompt,
+                        str(exc),
+                        limit=settings.max_prompt_chars,
+                    )
+                )
                 call = interpret_model_reply(reply)
             except LlmError as retry_exc:
                 _LOG.info("graph agent llm error")

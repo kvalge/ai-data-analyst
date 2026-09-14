@@ -70,6 +70,14 @@ def test_reads_plain_text(tmp_path: Path):
     assert result["text"] == "Region is the sales territory.\n"
 
 
+def test_read_context_file_trims_at_max_chars(tmp_path: Path):
+    """Extracted text is capped so a dense file cannot fill the LLM prompt."""
+    path = tmp_path / "notes.txt"
+    path.write_text("abcdefghij", encoding="utf-8")
+    result = read_context_file(path, max_bytes=_MAX, max_chars=8)
+    assert result["text"] == "abcdefgh"
+
+
 def test_extracts_text_from_uploaded_pdf(tmp_path: Path):
     """An already-written PDF yields extractable text, not the raw bytes."""
     path = tmp_path / "glossary.pdf"

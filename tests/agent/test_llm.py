@@ -12,6 +12,7 @@ from urllib.error import HTTPError, URLError
 
 import pytest
 
+from src.agent.json_output import STRICT_RETRY_INSTRUCTION, retry_prompt_after_validation
 from src.agent.llm import (
     ROLE_FALLBACK_FAST,
     LlmError,
@@ -61,6 +62,48 @@ def ollama_http(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
 
     monkeypatch.setattr("src.agent.llm.urllib.request.urlopen", fake_urlopen)
     return captured
+
+
+def test_complete_truncates_prompt_over_max_chars(
+    tmp_path, ollama_http: dict[str, Any]
+):
+    """A prompt longer than MAX_PROMPT_CHARS is cut before the HTTP body."""
+    settings = load_settings(
+        environ={
+            "OLLAMA_HOST": "http://ollama.test:11434",
+            "MAX_PROMPT_CHARS": "8",
+            **_PLACEHOLDER_MODELS,
+        },
+        load_dotenv_file=False,
+        project_root=tmp_path,
+    )
+    complete("abcdefghij", settings=settings)
+    assert ollama_http["body"]["prompt"] == "abcdefgh"
+
+
+def test_complete_keeps_retry_instruction_when_prompt_exceeds_max_chars(
+    tmp_path, ollama_http: dict[str, Any]
+):
+    """complete() cuts the tail; a near-limit retry must not lose the stricter instruction."""
+    settings = load_settings(
+        environ={
+            "OLLAMA_HOST": "http://ollama.test:11434",
+            "MAX_PROMPT_CHARS": "200",
+            **_PLACEHOLDER_MODELS,
+        },
+        load_dotenv_file=False,
+        project_root=tmp_path,
+    )
+    retry = retry_prompt_after_validation(
+        "B" * settings.max_prompt_chars,
+        "Could not parse JSON.",
+    )
+    assert len(retry) > settings.max_prompt_chars
+    complete(retry, settings=settings)
+    sent = ollama_http["body"]["prompt"]
+    assert sent.startswith(STRICT_RETRY_INSTRUCTION)
+    assert "Could not parse JSON." in sent
+    assert len(sent) == settings.max_prompt_chars
 
 
 def test_complete_defaults_to_primary_model(

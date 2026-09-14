@@ -15,6 +15,7 @@ from src.agent.codegen import (
     CodegenError,
     generate_checked_code,
 )
+from src.agent.json_output import STRICT_RETRY_INSTRUCTION
 from src.agent.llm import ROLE_CODING, ROLE_PRIMARY
 from src.config import Settings, load_settings
 
@@ -34,6 +35,19 @@ def settings(tmp_path) -> Settings:
     """Frozen settings with placeholder model names. No live Ollama."""
     return load_settings(
         environ={"OLLAMA_HOST": "http://ollama.test:11434", **_PLACEHOLDER_MODELS},
+        load_dotenv_file=False,
+        project_root=tmp_path,
+    )
+
+
+def _settings_with_prompt_cap(tmp_path, max_chars: int) -> Settings:
+    """Settings whose prompt cap is small enough that a retry suffix would overflow."""
+    return load_settings(
+        environ={
+            "OLLAMA_HOST": "http://ollama.test:11434",
+            "MAX_PROMPT_CHARS": str(max_chars),
+            **_PLACEHOLDER_MODELS,
+        },
         load_dotenv_file=False,
         project_root=tmp_path,
     )
@@ -185,6 +199,32 @@ def test_malformed_plan_retries_on_primary(settings: Settings):
         ROLE_CODING,
     ]
     assert all(call["structured"] is True for call in scripted.calls[:2])
+
+
+def test_plan_retry_keeps_instruction_when_request_fills_prompt_budget(tmp_path):
+    """A first plan prompt already at MAX_PROMPT_CHARS still retries with the stricter instruction."""
+    settings = _settings_with_prompt_cap(tmp_path, 200)
+    scripted = _Scripted(["not-json", _plan()], [_PYTHON])
+    _generate(settings, scripted, request="r" * settings.max_prompt_chars)
+    retry = scripted.calls[1]["prompt"]
+    assert retry.startswith(STRICT_RETRY_INSTRUCTION)
+    assert "Could not parse JSON." in retry
+    assert len(retry) <= settings.max_prompt_chars
+
+
+def test_code_retry_keeps_failure_reason_when_task_fills_prompt_budget(tmp_path):
+    """A coding retry must keep the checker error when the task already fills the prompt cap."""
+    settings = _settings_with_prompt_cap(tmp_path, 200)
+    scripted = _Scripted(
+        [_plan(task="t" * settings.max_prompt_chars)],
+        ["import subprocess\n", _PYTHON],
+    )
+    _generate(settings, scripted)
+    retry = scripted.calls[2]["prompt"]
+    assert retry.startswith("Previous model output failed validation:")
+    assert "subprocess" in retry
+    assert STRICT_RETRY_INSTRUCTION not in retry
+    assert len(retry) <= settings.max_prompt_chars
 
 
 def test_failed_plan_does_not_call_coding(settings: Settings):

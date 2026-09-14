@@ -9,7 +9,7 @@ import shutil
 from pathlib import Path
 from typing import Any
 
-from src.config import Settings
+from src.config import Settings, bound_text
 from src.execution.ast_check import check_python_ast
 from src.execution.sandbox import run_python_file
 from src.execution.workspace import copy_artifacts, sandbox_work_dir
@@ -92,7 +92,7 @@ def run_analysis_code(
         script.write_text(stripped, encoding="utf-8")
         result = run_python_file(script, work, timeout_s=timeout_s)
         if result.exit_code != 0:
-            snippet = _bounded_text(result.stderr, max_prompt_chars)
+            snippet = bound_text(result.stderr, max_prompt_chars)
             detail = f"Sandbox exited with code {result.exit_code}."
             if snippet:
                 detail = f"{detail}\n{snippet}"
@@ -108,7 +108,7 @@ def run_analysis_code(
     ]
     return {
         "source_id": source_id,
-        "stdout": _bounded_text(result.stdout, max_prompt_chars),
+        "stdout": bound_text(result.stdout, max_prompt_chars),
         "artifacts": artifacts,
     }
 
@@ -119,10 +119,3 @@ def _input_basename(original_name: str) -> str:
     if not name or name in {".", ".."} or name == _SCRIPT_NAME:
         raise FileValidationError("Source file name is not usable in the sandbox.")
     return name
-
-
-def _bounded_text(text: str, limit: int) -> str:
-    """Cap stdout or stderr so a dump cannot fill the tool result."""
-    if limit < 1 or len(text) <= limit:
-        return text
-    return text[:limit]

@@ -12,6 +12,7 @@ from src.agent.json_output import (
     JsonSchemaError,
     decide_after_parse_failure,
     parse_json_output,
+    retry_prompt_after_validation,
     strip_markdown_fences,
 )
 from src.agent.confirm_sources import (
@@ -56,7 +57,6 @@ from src.agent.execute import (
     ToolValidationError,
     interpret_model_reply,
     parse_tool_call,
-    retry_prompt_after_validation,
     run_allowlisted_tool,
     validate_tool_call,
 )

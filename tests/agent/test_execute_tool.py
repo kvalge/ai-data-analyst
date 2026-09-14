@@ -13,7 +13,6 @@ from src.agent.execute import (
     _validate_arg_types,
     interpret_model_reply,
     parse_tool_call,
-    retry_prompt_after_validation,
     run_allowlisted_tool,
     validate_tool_call,
 )
@@ -21,6 +20,7 @@ from src.agent.json_output import (
     STRICT_RETRY_INSTRUCTION,
     JsonParseError,
     JsonSchemaError,
+    retry_prompt_after_validation,
 )
 from src.config import load_settings
 from src.storage.registry import save_file_source
@@ -198,8 +198,8 @@ def test_interpret_unknown_tool_raises():
 def test_retry_prompt_includes_strict_instruction_and_error():
     """The retry prompt uses the 3.2 instruction and names the validation miss."""
     text = retry_prompt_after_validation("base", "Unknown tool: x.")
-    assert text.startswith("base")
-    assert STRICT_RETRY_INSTRUCTION in text
+    assert text.startswith(STRICT_RETRY_INSTRUCTION)
+    assert text.index(STRICT_RETRY_INSTRUCTION) < text.index("base")
     assert "Unknown tool: x." in text
 
 

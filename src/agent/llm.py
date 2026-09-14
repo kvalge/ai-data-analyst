@@ -10,7 +10,7 @@ import urllib.error
 import urllib.request
 from typing import Any
 
-from src.config import Settings
+from src.config import Settings, bound_text
 
 _LOG = logging.getLogger(__name__)
 
@@ -56,9 +56,16 @@ def complete(
     """POST /api/generate and return the text. Structured calls set think=false."""
     model = model_for_role(settings, role)
     seconds = settings.ollama_timeout_s if timeout_s is None else timeout_s
+    sent = bound_text(prompt, settings.max_prompt_chars)
+    if len(sent) < len(prompt):
+        _LOG.info(
+            "prompt truncated from=%s to=%s",
+            len(prompt),
+            settings.max_prompt_chars,
+        )
     payload: dict[str, Any] = {
         "model": model,
-        "prompt": prompt,
+        "prompt": sent,
         "stream": False,
     }
     if structured:

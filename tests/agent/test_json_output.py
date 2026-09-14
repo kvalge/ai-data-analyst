@@ -13,6 +13,7 @@ from src.agent.json_output import (
     JsonSchemaError,
     decide_after_parse_failure,
     parse_json_output,
+    retry_prompt_after_validation,
     strip_markdown_fences,
 )
 
@@ -134,3 +135,33 @@ def test_zero_failures_is_not_a_retry_decision():
     """The policy is only called after a failure."""
     with pytest.raises(ValueError, match="failure_count"):
         decide_after_parse_failure(0)
+
+
+def test_retry_prompt_keeps_instruction_when_base_exceeds_limit():
+    """The retry instruction is first so a tight character budget cannot drop it."""
+    error = "Could not parse JSON."
+    head = (
+        f"{STRICT_RETRY_INSTRUCTION}\n\n"
+        f"Previous model output failed validation: {error}"
+    )
+    limit = len(head) + 10
+    text = retry_prompt_after_validation("B" * (limit + 50), error, limit=limit)
+    assert text.startswith(STRICT_RETRY_INSTRUCTION)
+    assert error in text
+    assert len(text) == limit
+
+
+def test_retry_prompt_without_instruction_keeps_error_when_base_exceeds_limit():
+    """A coding-model retry has no JSON instruction; the failure reason still fits."""
+    error = "import subprocess is not allowed."
+    head = f"Previous model output failed validation: {error}"
+    limit = len(head) + 10
+    text = retry_prompt_after_validation(
+        "B" * (limit + 50),
+        error,
+        limit=limit,
+        instruction="",
+    )
+    assert STRICT_RETRY_INSTRUCTION not in text
+    assert text.startswith(head)
+    assert len(text) == limit

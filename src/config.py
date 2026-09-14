@@ -36,6 +36,14 @@ DEFAULT_RAG_TOP_K = 4
 DEFAULT_DB_CONNECT_TIMEOUT_S = 5
 DEFAULT_CHECKPOINT_BUSY_TIMEOUT_MS = 5_000
 
+
+def bound_text(text: str, limit: int) -> str:
+    """Cap `text` at `limit` characters. `limit < 1` means no cap."""
+    if limit < 1 or len(text) <= limit:
+        return text
+    return text[:limit]
+
+
 _REDACTED_FIELDS = frozenset({"db_password"})
 
 

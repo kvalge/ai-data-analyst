@@ -11,15 +11,15 @@ from src.agent.artifact_policy import ARTIFACT_POLICY_TEXT
 from src.agent.json_output import (
     FIRST_PARSE_FAILURE,
     RETRY_STRICT,
-    STRICT_RETRY_INSTRUCTION,
     JsonOutputError,
     JsonSchemaError,
     decide_after_parse_failure,
     parse_json_output,
+    retry_prompt_after_validation,
     strip_markdown_fences,
 )
 from src.agent.llm import ROLE_CODING, ROLE_PRIMARY, complete
-from src.config import Settings
+from src.config import Settings, bound_text
 from src.execution.ast_check import PythonAstError, check_python_ast
 from src.execution.sql_check import SqlCheckError, check_sql
 
@@ -122,12 +122,8 @@ def _complete_plan(
         if decide_after_parse_failure(FIRST_PARSE_FAILURE) != RETRY_STRICT:
             raise CodegenError(str(exc)) from exc
         _LOG.info("codegen plan parse retry")
-        retry_prompt = "\n\n".join(
-            (
-                prompt,
-                STRICT_RETRY_INSTRUCTION,
-                f"Previous model output failed validation: {exc}",
-            )
+        retry_prompt = retry_prompt_after_validation(
+            prompt, str(exc), limit=settings.max_prompt_chars
         )
         reply = completer(
             retry_prompt, settings=settings, role=ROLE_PRIMARY, structured=True
@@ -162,8 +158,11 @@ def _complete_code(
         return _checked_code(kind, reply)
     except CodegenError as exc:
         _LOG.info("codegen code check retry kind=%s", kind)
-        retry_prompt = "\n\n".join(
-            (prompt, f"Previous output failed validation: {exc}")
+        retry_prompt = retry_prompt_after_validation(
+            prompt,
+            str(exc),
+            limit=settings.max_prompt_chars,
+            instruction="",
         )
         reply = completer(
             retry_prompt, settings=settings, role=ROLE_CODING, structured=False
@@ -193,10 +192,10 @@ def _plan_prompt(request: str, source_id: str | None, limit: int) -> str:
         '{"kind": "python" or "sql", "task": "<instruction for the code model>", '
         '"rationale": "<short why>", "source_id": "<id if known>"}',
         "No markdown fences and no commentary. Do not include dataset rows.",
-        f"User request:\n{_bounded(request, limit)}",
+        f"User request:\n{bound_text(request, limit)}",
     ]
     if source_id:
-        parts.append(f"Source id: {_bounded(source_id, limit)}")
+        parts.append(f"Source id: {bound_text(source_id, limit)}")
     return "\n\n".join(parts)
 
 
@@ -218,11 +217,4 @@ def _code_prompt(kind: str, task: str, limit: int) -> str:
             "SQL only, no markdown fences. No INSERT, UPDATE, DELETE, DDL, "
             "or multiple statements."
         )
-    return f"{header}\n\nTask:\n{_bounded(task, limit)}"
-
-
-def _bounded(text: str, limit: int) -> str:
-    """Cap a prompt fragment so a dump cannot fill the LLM call."""
-    if limit < 1 or len(text) <= limit:
-        return text
-    return text[:limit]
+    return f"{header}\n\nTask:\n{bound_text(task, limit)}"

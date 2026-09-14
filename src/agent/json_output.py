@@ -10,6 +10,8 @@ import re
 from collections.abc import Mapping
 from typing import Any
 
+from src.config import bound_text
+
 _LOG = logging.getLogger(__name__)
 
 RETRY_STRICT = "retry_strict"
@@ -18,6 +20,7 @@ FIRST_PARSE_FAILURE = 1
 STRICT_RETRY_INSTRUCTION = (
     "Reply with a single JSON object only. No markdown fences, no commentary."
 )
+_RETRY_SEP = "\n\n"
 
 _FENCED = re.compile(
     r"^```[A-Za-z0-9_+-]*[ \t]*\r?\n(.*?)[ \t]*\r?\n?```$",
@@ -35,6 +38,25 @@ class JsonParseError(JsonOutputError):
 
 class JsonSchemaError(JsonOutputError):
     """Parsed JSON does not match the schema. Fields are not invented."""
+
+
+def retry_prompt_after_validation(
+    base_prompt: str,
+    error: str,
+    *,
+    limit: int | None = None,
+    instruction: str = STRICT_RETRY_INSTRUCTION,
+) -> str:
+    """Put the retry instruction first so prompt truncation cannot drop it."""
+    head_parts = [instruction] if instruction else []
+    head_parts.append(f"Previous model output failed validation: {error}")
+    head = _RETRY_SEP.join(head_parts)
+    if limit is None or limit < 1:
+        return _RETRY_SEP.join((head, base_prompt))
+    room = limit - len(head) - len(_RETRY_SEP)
+    if room < 1:
+        return bound_text(head, limit)
+    return _RETRY_SEP.join((head, bound_text(base_prompt, room)))
 
 
 def strip_markdown_fences(text: str) -> str:

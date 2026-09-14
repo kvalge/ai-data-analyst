@@ -10,6 +10,7 @@ from pathlib import Path
 from pypdf import PdfReader
 from pypdf.errors import PyPdfError
 
+from src.config import DEFAULT_MAX_PROMPT_CHARS, bound_text
 from src.validation.context_files import validate_context_file
 from src.validation.uploads import FileValidationError
 
@@ -22,12 +23,14 @@ class ContextReadError(ValueError):
     """A context document could not be read as text."""
 
 
-def read_context_file(path: Path, *, max_bytes: int) -> dict[str, str]:
+def read_context_file(
+    path: Path, *, max_bytes: int, max_chars: int = DEFAULT_MAX_PROMPT_CHARS
+) -> dict[str, str]:
     """Return `{source_file, text}` for one allowlisted context document.
 
     `source_file` is the basename (the document identity). Does not return
     tables or file bytes. `max_bytes` is the same upload cap used to store
-    the file.
+    the file. Extracted text is capped at `max_chars`.
     """
     resolved = validate_context_file(path, max_bytes=max_bytes)
     suffix = resolved.suffix.lower()
@@ -50,7 +53,15 @@ def read_context_file(path: Path, *, max_bytes: int) -> dict[str, str]:
         raise ContextReadError(
             f"Context file {resolved.name} has no extractable text."
         )
-    return {"source_file": resolved.name, "text": text}
+    capped = bound_text(text, max_chars)
+    if len(capped) < len(text):
+        _LOG.info(
+            "read context truncated name=%s from=%s to=%s",
+            resolved.name,
+            len(text),
+            max_chars,
+        )
+    return {"source_file": resolved.name, "text": capped}
 
 
 def _read_plain(path: Path) -> str:
@@ -60,7 +71,6 @@ def _read_plain(path: Path) -> str:
 
 def _read_pdf(path: Path) -> str:
     """Extract page text from an already-uploaded PDF. Local only."""
-    # TODO(8.2): extracted text is unbounded; trim at MAX_PROMPT_CHARS.
     try:
         reader = PdfReader(str(path))
         pages = [(page.extract_text() or "") for page in reader.pages]
