@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from src.config import load_settings
+from src.config import DEFAULT_MAX_UPLOAD_BYTES, DEFAULT_SAMPLE_N_ROWS, load_settings
 from src.profiling.dq import NULLS_RESULT_KEYS
 from src.profiling.schema import SCHEMA_RESULT_KEYS
 from src.storage.registry import save_file_source
@@ -18,7 +18,7 @@ from src.tools.profile_source import PROFILE_SOURCE, ProfileError, profile_sourc
 from src.validation.data_files import FileValidationError
 from tests.tool_schema import assert_keys_match_required
 
-_MAX = 50 * 1024 * 1024
+_MAX = DEFAULT_MAX_UPLOAD_BYTES
 
 
 def _register_sales(tmp_path: Path, sample_sales_csv: Path):
@@ -36,14 +36,14 @@ def test_profile_source_fresh_then_cached(tmp_path: Path, sample_sales_csv: Path
     fresh = profile_source(
         upload_dir=upload_dir,
         cache_dir=cache_dir,
-        n_rows=50,
+        n_rows=DEFAULT_SAMPLE_N_ROWS,
         max_bytes=_MAX,
         source_id=saved.source_id,
     )
     cached = profile_source(
         upload_dir=upload_dir,
         cache_dir=cache_dir,
-        n_rows=50,
+        n_rows=DEFAULT_SAMPLE_N_ROWS,
         max_bytes=_MAX,
         source_id=saved.source_id,
     )

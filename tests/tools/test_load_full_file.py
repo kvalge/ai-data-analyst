@@ -14,7 +14,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from src.config import load_settings
+from src.config import DEFAULT_MAX_UPLOAD_BYTES, load_settings
 from src.storage.registry import registry_path, save_file_source
 from src.storage.sources import make_postgres_source
 from src.tools.load_full_file import LOAD_FULL_FILE, load_full_file
@@ -22,7 +22,7 @@ from src.tools.profile_source import ProfileError
 from src.validation.data_files import FileValidationError
 from tests.tool_schema import assert_keys_match_required
 
-_BIG_BYTES = 50 * 1024 * 1024
+_BIG_BYTES = DEFAULT_MAX_UPLOAD_BYTES
 
 
 _SALES_RECORDS = [

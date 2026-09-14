@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission. Code `# TODO` / `# FIXME` comments are also listed under **Open TODOs (code)** below.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** **3.12 done.** **3.13 done.** **4.1 done.** **4.2 done.** **4.3 done.** **4.4 done.** **4.5 done.** **4.6 done.** **4.7 done.** **4.8 done.** **4.9 done.** **4.10 done.** **4.11 done.** **4.12 done.** **5.1 done.** **5.2 done.** **5.3 done.** **5.4 done.** **5.5 done.** **6.1 done.** **6.2 done.** **6.3 done.** **6.4 done.** **6.5 done.** **6.6 skipped.** **7.1 done.** **7.2 done.** **7.3 done.** **7.4 done.** **7.5 skipped.** Next step: **8.1**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** **3.12 done.** **3.13 done.** **4.1 done.** **4.2 done.** **4.3 done.** **4.4 done.** **4.5 done.** **4.6 done.** **4.7 done.** **4.8 done.** **4.9 done.** **4.10 done.** **4.11 done.** **4.12 done.** **5.1 done.** **5.2 done.** **5.3 done.** **5.4 done.** **5.5 done.** **6.1 done.** **6.2 done.** **6.3 done.** **6.4 done.** **6.5 done.** **6.6 skipped.** **7.1 done.** **7.2 done.** **7.3 done.** **7.4 done.** **7.5 skipped.** **8.1 done.** Next step: **8.2**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -27,9 +27,9 @@ Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 | Context same-name upload | **Overwrite** the file in `CONTEXT_DIR`. Basename is the document identity (unlike hashed data sources). No auto-rename, no reject. |
 | Tool results | Success = plain dict matching `result_schema`. Failure = raise a domain exception. No per-tool ok/error wrapper. |
 | `profile_source` scope | **Quick overview of a bounded head** (`n_rows`, default `SAMPLE_N_ROWS`). Not a whole-file profiler. Whole-file numbers only when the file fits in that cap (plus CSV `file_row_count`). Exact large-file profile is 2.12+. |
-| New env vars (placeholders in `.env.example`) | `CONTEXT_DIR`, `CACHE_DIR`, `ARTIFACT_DIR`, `CHECKPOINT_PATH`, `MAX_UPLOAD_BYTES`, `MAX_FULL_LOAD_ROWS`, `SAMPLE_N_ROWS`, `SANDBOX_TIMEOUT_S`, `OLLAMA_TIMEOUT_S`, `MAX_PROMPT_CHARS`, `MAX_PROMPT_TURNS` |
+| New env vars (placeholders in `.env.example`) | `CONTEXT_DIR`, `CACHE_DIR`, `ARTIFACT_DIR`, `CHECKPOINT_PATH`, `MAX_UPLOAD_BYTES`, `MAX_FULL_LOAD_ROWS`, `SAMPLE_N_ROWS`, `SANDBOX_TIMEOUT_S`, `OLLAMA_TIMEOUT_S`, `MAX_PROMPT_CHARS`, `MAX_PROMPT_TURNS`, `MAX_ARTIFACTS`, `RAG_TOP_K`, `DB_CONNECT_TIMEOUT_S` |
 
-**Default limits:** upload 50 MB; sample 50 rows; auto full-load pause above 100 000 rows or 50 MB; sandbox 30 s; Ollama generate 120 s; prompt 8 000 characters; prompt window 8 turns.
+**Default limits:** upload 50 MB; sample 50 rows; auto full-load pause above 100 000 rows or 50 MB; sandbox 30 s; Ollama generate 120 s; prompt 8 000 characters; prompt window 8 turns; last 8 artifact paths; RAG top-k 4; Postgres connect 5 s. Sqlite busy-timeout 5 000 ms is `DEFAULT_CHECKPOINT_BUSY_TIMEOUT_MS` in `config.py` (not env). Tukey IQR 1.5 and EDA top-N 10 stay named algorithm constants, not env.
 
 **SQL static checks:** single statement; reject write/DDL (`INSERT`, `UPDATE`, `DELETE`, `DROP`, `ALTER`, `CREATE`, `TRUNCATE`, `GRANT`, `COPY`, `INTO`).
 
@@ -518,13 +518,13 @@ No sandbox code execution yet. Tools: `list_available_sources`, `read_file_sampl
 
 - [x] `retrieve_domain_context(query)` → top-k chunks.
 - [x] Tests: query hits the relevant fixture chunk.
-- In-memory TF-IDF (`DomainContextIndex`). `retrieve_domain_context` takes an injected index (not the LLM). Returns `{chunks: [{source_file, chunk_id, text, score}]}`. Default `top_k` is `DEFAULT_TOP_K` (exported from `src.rag`). Blank query raises `ContextRetrieveError`. Zero-score chunks are omitted. Logs hit counts only, not query or chunk text. Not a graph tool yet (6.4). Does not persist or reindex (6.5). No scikit-learn; small local TF-IDF.
+- In-memory TF-IDF (`DomainContextIndex`). `retrieve_domain_context` takes an injected index (not the LLM). Returns `{chunks: [{source_file, chunk_id, text, score}]}`. Default `top_k` is `DEFAULT_RAG_TOP_K` from `src.config`. Blank query raises `ContextRetrieveError`. Zero-score chunks are omitted. Logs hit counts only, not query or chunk text. Not a graph tool yet (6.4). Does not persist or reindex (6.5). No scikit-learn; small local TF-IDF.
 
 ### 6.4 Bind RAG tool to the graph
 
 - [x] Agent may call it; inject snippets into context; never index CSVs.
 - [x] Test: data files are not in the corpus.
-- `retrieve_domain_context` is a registered tool. The graph injects `CONTEXT_DIR` and `MAX_UPLOAD_BYTES`; `top_k` defaults to `DEFAULT_TOP_K`. The index is built from `list_context_files` (allowlisted suffixes only) on each call — persist/rebuild is 6.5. Snippets stay in `last_tool_result` so the next prompt sees them. Summary is a chunk count, not snippet text. Data files in `UPLOAD_DIR` or a `.csv` dropped in `CONTEXT_DIR` are not indexed.
+- `retrieve_domain_context` is a registered tool. The graph injects `CONTEXT_DIR` and `MAX_UPLOAD_BYTES`; `top_k` defaults to `DEFAULT_RAG_TOP_K`. The index is built from `list_context_files` (allowlisted suffixes only) on each call — persist/rebuild is 6.5. Snippets stay in `last_tool_result` so the next prompt sees them. Summary is a chunk count, not snippet text. Data files in `UPLOAD_DIR` or a `.csv` dropped in `CONTEXT_DIR` are not indexed.
 
 ### 6.5 Reindex on context upload
 
@@ -574,8 +574,9 @@ No sandbox code execution yet. Tools: `list_available_sources`, `read_file_sampl
 
 ### 8.1 Centralize limits
 
-- All thresholds only in `src/config.py` / env; grep for leftover magic numbers.
-- Tests read from settings.
+- [x] All thresholds only in `src/config.py` / env; grep for leftover magic numbers.
+- [x] Tests read from settings.
+- Moved leftover operational limits into Settings: `MAX_ARTIFACTS`, `RAG_TOP_K`, `DB_CONNECT_TIMEOUT_S`. Checkpoint `busy_timeout` uses `DEFAULT_CHECKPOINT_BUSY_TIMEOUT_MS`. Retrieve and the context tool import `DEFAULT_RAG_TOP_K` from config; there is no `src.rag.DEFAULT_TOP_K` alias. Tests import `DEFAULT_*` instead of repeating `50 * 1024 * 1024` / `n_rows=50` / `top_k=4`. `test_env_example_matches_defaults` keeps `.env.example` aligned with those constants. IQR 1.5 and EDA `_TOP_N` stay named locals.
 
 ### 8.2 Prompt length limit
 
@@ -671,6 +672,6 @@ Not current-step work and not code `# TODO`s. Revisit when the listed step runs.
 
 ## Current focus
 
-**7.5 skipped.** Next: **8.1 Centralize limits**.
-Do not start 8.1 until you say to proceed.
-Dashboards stay out of v1 unless you ask.
+**8.1 done.** Next: **8.2 Prompt length limit**.
+Do not start 8.2 until you say to proceed.
+Operational limits live in `src/config.py` / env; tests read the defaults.

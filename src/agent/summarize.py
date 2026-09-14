@@ -9,9 +9,9 @@ import logging
 from pathlib import Path
 from typing import Any
 
-_LOG = logging.getLogger(__name__)
+from src.config import DEFAULT_MAX_ARTIFACTS
 
-DEFAULT_MAX_ARTIFACTS = 8
+_LOG = logging.getLogger(__name__)
 
 _RECORD_LIST_KEYS = frozenset({"rows"})
 _SUMMARY_KEYS = frozenset(
@@ -95,6 +95,7 @@ def checkpoint_tool_result(
     name: str,
     result: dict[str, Any],
     prior_artifacts: list[str],
+    max_artifacts: int = DEFAULT_MAX_ARTIFACTS,
 ) -> dict[str, Any]:
     """Build execute_tool updates: summarized result, artifacts, no row lists."""
     if not isinstance(result, dict):
@@ -109,7 +110,9 @@ def checkpoint_tool_result(
     }
     paths = artifact_paths_from_result(stored)
     if paths:
-        updates["artifacts"] = merge_artifacts(prior_artifacts, paths)
+        updates["artifacts"] = merge_artifacts(
+            prior_artifacts, paths, max_artifacts=max_artifacts
+        )
     if name == "profile_source":
         if not is_json_safe(result):
             raise ValueError("Tool result is not JSON-safe.")

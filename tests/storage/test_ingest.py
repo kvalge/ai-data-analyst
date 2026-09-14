@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 
+from src.config import DEFAULT_MAX_UPLOAD_BYTES
 from src.storage.ingest import ingest_data_upload
 from src.storage.registry import RegistryError
 from src.tools.list_sources import list_available_sources
@@ -21,7 +22,7 @@ def test_ingest_sample_csv_lists_one_source(tmp_path: Path, sample_sales_csv: Pa
     payload = sample_sales_csv.read_bytes()
 
     saved = ingest_data_upload(
-        payload, "sales.csv", upload_dir, max_bytes=50 * 1024 * 1024
+        payload, "sales.csv", upload_dir, max_bytes=DEFAULT_MAX_UPLOAD_BYTES
     )
 
     listed = list_available_sources(upload_dir)
@@ -36,7 +37,7 @@ def test_ingest_rejects_wrong_suffix(tmp_path: Path):
 
     with pytest.raises(FileValidationError, match="suffix"):
         ingest_data_upload(
-            b"not a dataset", "notes.txt", upload_dir, max_bytes=50 * 1024 * 1024
+            b"not a dataset", "notes.txt", upload_dir, max_bytes=DEFAULT_MAX_UPLOAD_BYTES
         )
 
     assert list_available_sources(upload_dir) == {"sources": []}
@@ -96,7 +97,7 @@ def _assert_save_failure_cleans_temp(
 
     with pytest.raises(expected, match=match):
         ingest_data_upload(
-            payload, "sales.csv", tmp_path / "uploads", max_bytes=50 * 1024 * 1024
+            payload, "sales.csv", tmp_path / "uploads", max_bytes=DEFAULT_MAX_UPLOAD_BYTES
         )
 
     assert len(created) == 1

@@ -10,6 +10,8 @@ from pathlib import Path
 
 from langgraph.checkpoint.sqlite import SqliteSaver
 
+from src.config import DEFAULT_CHECKPOINT_BUSY_TIMEOUT_MS
+
 _LOG = logging.getLogger(__name__)
 
 
@@ -47,7 +49,9 @@ def sqlite_checkpointer(checkpoint_path: Path) -> SqliteSaver:
     checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(checkpoint_path), check_same_thread=False)
     conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("PRAGMA busy_timeout=5000")
+    conn.execute(
+        f"PRAGMA busy_timeout={DEFAULT_CHECKPOINT_BUSY_TIMEOUT_MS}"
+    )
     saver = SqliteSaver(conn)
     saver.setup()
     _LOG.info("checkpoint sqlite path=%s", checkpoint_path)

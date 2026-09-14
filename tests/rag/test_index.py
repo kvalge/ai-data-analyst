@@ -9,10 +9,11 @@ from pathlib import Path
 
 import pytest
 
+from src.config import DEFAULT_MAX_UPLOAD_BYTES
 from src.rag.index import CONTEXT_INDEX_NAME, reindex_context
 from src.storage.context import ingest_context_upload
 
-_MAX = 50 * 1024 * 1024
+_MAX = DEFAULT_MAX_UPLOAD_BYTES
 
 
 def test_reindex_after_upload_hits_glossary(

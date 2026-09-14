@@ -10,9 +10,10 @@ import re
 from collections.abc import Mapping, Sequence
 from typing import Any
 
+from src.config import DEFAULT_RAG_TOP_K
+
 _LOG = logging.getLogger(__name__)
 
-DEFAULT_TOP_K = 4
 _TOKEN = re.compile(r"[A-Za-z0-9_]+")
 
 
@@ -70,7 +71,7 @@ def retrieve_domain_context(
     query: str,
     *,
     index: DomainContextIndex,
-    top_k: int = DEFAULT_TOP_K,
+    top_k: int = DEFAULT_RAG_TOP_K,
 ) -> dict[str, Any]:
     """Return `{chunks}` scored by TF-IDF cosine similarity.
 

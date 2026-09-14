@@ -8,10 +8,11 @@ from pathlib import Path
 
 import pytest
 
+from src.config import DEFAULT_MAX_UPLOAD_BYTES
 from src.rag.readers import ContextReadError, read_context_file
 from src.validation.uploads import FileValidationError
 
-_MAX = 50 * 1024 * 1024
+_MAX = DEFAULT_MAX_UPLOAD_BYTES
 
 
 def _pdf_with_text(text: str) -> bytes:

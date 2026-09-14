@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 
+from src.config import DEFAULT_MAX_UPLOAD_BYTES, DEFAULT_RAG_TOP_K
 from src.rag.chunker import chunk_context
 from src.rag.readers import read_context_file
 from src.rag.retrieve import (
@@ -16,7 +17,7 @@ from src.rag.retrieve import (
     retrieve_domain_context,
 )
 
-_MAX = 50 * 1024 * 1024
+_MAX = DEFAULT_MAX_UPLOAD_BYTES
 
 
 def _mixed_index(sample_glossary_md: Path) -> DomainContextIndex:
@@ -68,7 +69,7 @@ def test_unmatched_query_returns_no_chunks(sample_glossary_md: Path):
     result = retrieve_domain_context(
         "zzzzz",
         index=_mixed_index(sample_glossary_md),
-        top_k=4,
+        top_k=DEFAULT_RAG_TOP_K,
     )
     assert result["chunks"] == []
 

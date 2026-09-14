@@ -7,12 +7,13 @@ from pathlib import Path
 
 import pytest
 
+from src.config import DEFAULT_MAX_UPLOAD_BYTES, DEFAULT_SAMPLE_N_ROWS
 from src.storage.registry import save_file_source
 from src.tools.read_sample import READ_FILE_SAMPLE, read_file_sample
 from src.validation.data_files import FileValidationError
 from tests.tool_schema import assert_keys_match_required
 
-_MAX = 50 * 1024 * 1024
+_MAX = DEFAULT_MAX_UPLOAD_BYTES
 
 
 def test_read_sample_by_source_id(tmp_path: Path, sample_sales_csv: Path):
@@ -48,7 +49,7 @@ def test_read_sample_by_path_under_upload_dir(tmp_path: Path, sample_sales_csv: 
 
     result = read_file_sample(
         upload_dir=upload_dir,
-        n_rows=50,
+        n_rows=DEFAULT_SAMPLE_N_ROWS,
         max_bytes=_MAX,
         path=saved.stored_path.name,
     )

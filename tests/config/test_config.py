@@ -3,16 +3,29 @@
 """Tests for env-backed application settings."""
 
 import pytest
+from dotenv import dotenv_values
 
 from src.config import (
+    DEFAULT_ARTIFACT_DIR,
+    DEFAULT_CACHE_DIR,
+    DEFAULT_CHECKPOINT_PATH,
+    DEFAULT_CONTEXT_DIR,
+    DEFAULT_DB_CONNECT_TIMEOUT_S,
+    DEFAULT_DB_HOST,
+    DEFAULT_DB_PORT,
+    DEFAULT_LOG_LEVEL,
+    DEFAULT_MAX_ARTIFACTS,
     DEFAULT_MAX_FULL_LOAD_ROWS,
     DEFAULT_MAX_PROMPT_CHARS,
     DEFAULT_MAX_PROMPT_TURNS,
     DEFAULT_MAX_UPLOAD_BYTES,
     DEFAULT_OLLAMA_HOST,
     DEFAULT_OLLAMA_TIMEOUT_S,
+    DEFAULT_RAG_TOP_K,
     DEFAULT_SAMPLE_N_ROWS,
     DEFAULT_SANDBOX_TIMEOUT_S,
+    DEFAULT_UPLOAD_DIR,
+    PROJECT_ROOT,
     SettingsError,
     load_settings,
 )
@@ -23,6 +36,42 @@ _PLACEHOLDER_MODELS = {
     "OLLAMA_MODEL_AGENTIC": "placeholder-agentic:tag",
     "OLLAMA_MODEL_CODING": "placeholder-coding:tag",
 }
+
+# Env-backed DEFAULT_* that .env.example documents. Placeholders for models
+# and DB_NAME/USER/PASSWORD are not defaults.
+_ENV_EXAMPLE_DEFAULTS: dict[str, str | int] = {
+    "OLLAMA_HOST": DEFAULT_OLLAMA_HOST,
+    "OLLAMA_TIMEOUT_S": DEFAULT_OLLAMA_TIMEOUT_S,
+    "DB_HOST": DEFAULT_DB_HOST,
+    "DB_PORT": DEFAULT_DB_PORT,
+    "UPLOAD_DIR": DEFAULT_UPLOAD_DIR,
+    "CONTEXT_DIR": DEFAULT_CONTEXT_DIR,
+    "CACHE_DIR": DEFAULT_CACHE_DIR,
+    "ARTIFACT_DIR": DEFAULT_ARTIFACT_DIR,
+    "CHECKPOINT_PATH": DEFAULT_CHECKPOINT_PATH,
+    "MAX_UPLOAD_BYTES": DEFAULT_MAX_UPLOAD_BYTES,
+    "MAX_FULL_LOAD_ROWS": DEFAULT_MAX_FULL_LOAD_ROWS,
+    "SAMPLE_N_ROWS": DEFAULT_SAMPLE_N_ROWS,
+    "SANDBOX_TIMEOUT_S": DEFAULT_SANDBOX_TIMEOUT_S,
+    "MAX_PROMPT_CHARS": DEFAULT_MAX_PROMPT_CHARS,
+    "MAX_PROMPT_TURNS": DEFAULT_MAX_PROMPT_TURNS,
+    "MAX_ARTIFACTS": DEFAULT_MAX_ARTIFACTS,
+    "RAG_TOP_K": DEFAULT_RAG_TOP_K,
+    "DB_CONNECT_TIMEOUT_S": DEFAULT_DB_CONNECT_TIMEOUT_S,
+    "LOG_LEVEL": DEFAULT_LOG_LEVEL,
+}
+
+
+def test_env_example_matches_defaults():
+    """Documented .env.example values stay aligned with config DEFAULT_*."""
+    example = dotenv_values(PROJECT_ROOT / ".env.example")
+    for key, expected in _ENV_EXAMPLE_DEFAULTS.items():
+        raw = example.get(key)
+        assert raw is not None, f"{key} missing from .env.example"
+        if isinstance(expected, int):
+            assert int(raw) == expected
+        else:
+            assert raw == expected
 
 
 def test_defaults_resolve(tmp_path):
@@ -53,7 +102,27 @@ def test_defaults_resolve(tmp_path):
     assert settings.ollama_timeout_s == DEFAULT_OLLAMA_TIMEOUT_S
     assert settings.max_prompt_chars == DEFAULT_MAX_PROMPT_CHARS
     assert settings.max_prompt_turns == DEFAULT_MAX_PROMPT_TURNS
+    assert settings.max_artifacts == DEFAULT_MAX_ARTIFACTS
+    assert settings.rag_top_k == DEFAULT_RAG_TOP_K
+    assert settings.db_connect_timeout_s == DEFAULT_DB_CONNECT_TIMEOUT_S
     assert settings.log_level == "INFO"
+
+
+def test_centralized_limits_from_env(tmp_path):
+    """Leftover thresholds moved in 8.1 are env-backed."""
+    settings = load_settings(
+        environ={
+            "MAX_ARTIFACTS": "3",
+            "RAG_TOP_K": "2",
+            "DB_CONNECT_TIMEOUT_S": "7",
+        },
+        load_dotenv_file=False,
+        project_root=tmp_path,
+        require_models=False,
+    )
+    assert settings.max_artifacts == 3
+    assert settings.rag_top_k == 2
+    assert settings.db_connect_timeout_s == 7
 
 
 def test_max_prompt_turns_from_env(tmp_path):

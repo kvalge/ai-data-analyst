@@ -14,8 +14,6 @@ from src.config import Settings
 
 _LOG = logging.getLogger(__name__)
 
-_CONNECT_TIMEOUT_S = 5
-
 
 class DatabaseError(Exception):
     """Postgres is not configured or the connection is not usable."""
@@ -47,7 +45,7 @@ def check_postgres_connection(
             dbname=settings.db_name,
             user=settings.db_user,
             password=settings.db_password,
-            connect_timeout=_CONNECT_TIMEOUT_S,
+            connect_timeout=settings.db_connect_timeout_s,
         ) as connection:
             connection.execute("SELECT 1")
     except (OSError, psycopg.Error) as exc:

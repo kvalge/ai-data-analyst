@@ -6,10 +6,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from src.config import DEFAULT_MAX_UPLOAD_BYTES
 from src.rag.chunker import chunk_context
 from src.rag.readers import read_context_file
 
-_MAX = 50 * 1024 * 1024
+_MAX = DEFAULT_MAX_UPLOAD_BYTES
 
 
 def test_chunks_glossary_fixture(sample_glossary_md: Path):

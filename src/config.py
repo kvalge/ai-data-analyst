@@ -31,6 +31,10 @@ DEFAULT_SANDBOX_TIMEOUT_S = 30
 DEFAULT_OLLAMA_TIMEOUT_S = 120
 DEFAULT_MAX_PROMPT_CHARS = 8_000
 DEFAULT_MAX_PROMPT_TURNS = 8
+DEFAULT_MAX_ARTIFACTS = 8
+DEFAULT_RAG_TOP_K = 4
+DEFAULT_DB_CONNECT_TIMEOUT_S = 5
+DEFAULT_CHECKPOINT_BUSY_TIMEOUT_MS = 5_000
 
 _REDACTED_FIELDS = frozenset({"db_password"})
 
@@ -60,6 +64,9 @@ class Settings:
     sandbox_timeout_s: int
     max_prompt_chars: int
     max_prompt_turns: int
+    max_artifacts: int
+    rag_top_k: int
+    db_connect_timeout_s: int
     log_level: str
     db_host: str
     db_port: int
@@ -129,6 +136,11 @@ def load_settings(
         ),
         max_prompt_turns=_get_int(
             environ, "MAX_PROMPT_TURNS", DEFAULT_MAX_PROMPT_TURNS
+        ),
+        max_artifacts=_get_int(environ, "MAX_ARTIFACTS", DEFAULT_MAX_ARTIFACTS),
+        rag_top_k=_get_int(environ, "RAG_TOP_K", DEFAULT_RAG_TOP_K),
+        db_connect_timeout_s=_get_int(
+            environ, "DB_CONNECT_TIMEOUT_S", DEFAULT_DB_CONNECT_TIMEOUT_S
         ),
         log_level=_get_str(environ, "LOG_LEVEL", DEFAULT_LOG_LEVEL),
         db_host=_get_str(environ, "DB_HOST", DEFAULT_DB_HOST),

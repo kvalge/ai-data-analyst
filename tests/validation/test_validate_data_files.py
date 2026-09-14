@@ -6,12 +6,13 @@ from pathlib import Path
 
 import pytest
 
+from src.config import DEFAULT_MAX_UPLOAD_BYTES
 from src.validation.data_files import FileValidationError, validate_data_file
 
 
 def test_accepts_sample_sales_csv(sample_sales_csv: Path):
     """The committed sales fixture is a valid data file."""
-    assert validate_data_file(sample_sales_csv, max_bytes=50 * 1024 * 1024) == (
+    assert validate_data_file(sample_sales_csv, max_bytes=DEFAULT_MAX_UPLOAD_BYTES) == (
         sample_sales_csv.expanduser()
     )
 
@@ -21,7 +22,7 @@ def test_accepts_uppercase_csv_suffix(tmp_path: Path, sample_sales_csv: Path):
     path = tmp_path / "sales.CSV"
     path.write_bytes(sample_sales_csv.read_bytes())
 
-    assert validate_data_file(path, max_bytes=50 * 1024 * 1024) == path.expanduser()
+    assert validate_data_file(path, max_bytes=DEFAULT_MAX_UPLOAD_BYTES) == path.expanduser()
 
 
 def test_rejects_wrong_suffix(tmp_path: Path):
@@ -30,7 +31,7 @@ def test_rejects_wrong_suffix(tmp_path: Path):
     path.write_text("not a dataset", encoding="utf-8")
 
     with pytest.raises(FileValidationError, match="suffix") as exc_info:
-        validate_data_file(path, max_bytes=50 * 1024 * 1024)
+        validate_data_file(path, max_bytes=DEFAULT_MAX_UPLOAD_BYTES)
 
     assert ".txt" in str(exc_info.value)
 
@@ -41,7 +42,7 @@ def test_rejects_empty_file(tmp_path: Path):
     path.write_bytes(b"")
 
     with pytest.raises(FileValidationError, match="empty"):
-        validate_data_file(path, max_bytes=50 * 1024 * 1024)
+        validate_data_file(path, max_bytes=DEFAULT_MAX_UPLOAD_BYTES)
 
 
 def test_rejects_over_max_bytes(tmp_path: Path):
@@ -65,4 +66,4 @@ def test_rejects_unreadable_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     )
 
     with pytest.raises(FileValidationError, match="readable"):
-        validate_data_file(path, max_bytes=50 * 1024 * 1024)
+        validate_data_file(path, max_bytes=DEFAULT_MAX_UPLOAD_BYTES)

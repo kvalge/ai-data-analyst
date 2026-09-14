@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 
+from src.config import DEFAULT_MAX_UPLOAD_BYTES
 from src.storage.context import ingest_context_upload, list_context_files
 from src.tools.list_sources import list_available_sources
 from src.validation.uploads import FileValidationError
@@ -23,7 +24,7 @@ def test_ingest_markdown_is_context_not_data_source(
     payload = sample_glossary_md.read_bytes()
 
     saved = ingest_context_upload(
-        payload, "glossary.md", context_dir, max_bytes=50 * 1024 * 1024
+        payload, "glossary.md", context_dir, max_bytes=DEFAULT_MAX_UPLOAD_BYTES
     )
 
     assert saved == context_dir / "glossary.md"
@@ -39,7 +40,7 @@ def test_ingest_context_rejects_csv(tmp_path: Path, sample_sales_csv: Path):
 
     with pytest.raises(FileValidationError, match="suffix"):
         ingest_context_upload(
-            payload, "sales.csv", context_dir, max_bytes=50 * 1024 * 1024
+            payload, "sales.csv", context_dir, max_bytes=DEFAULT_MAX_UPLOAD_BYTES
         )
 
     assert list_context_files(context_dir) == []
@@ -51,7 +52,7 @@ def test_ingest_context_keeps_basename_only(tmp_path: Path, sample_glossary_md: 
     payload = sample_glossary_md.read_bytes()
 
     saved = ingest_context_upload(
-        payload, "../glossary.md", context_dir, max_bytes=50 * 1024 * 1024
+        payload, "../glossary.md", context_dir, max_bytes=DEFAULT_MAX_UPLOAD_BYTES
     )
 
     assert saved == context_dir / "glossary.md"
@@ -64,10 +65,10 @@ def test_ingest_context_same_name_overwrites(tmp_path: Path):
     context_dir = tmp_path / "context"
 
     first = ingest_context_upload(
-        b"# old glossary\n", "glossary.md", context_dir, max_bytes=50 * 1024 * 1024
+        b"# old glossary\n", "glossary.md", context_dir, max_bytes=DEFAULT_MAX_UPLOAD_BYTES
     )
     saved = ingest_context_upload(
-        b"# new glossary\n", "glossary.md", context_dir, max_bytes=50 * 1024 * 1024
+        b"# new glossary\n", "glossary.md", context_dir, max_bytes=DEFAULT_MAX_UPLOAD_BYTES
     )
 
     assert saved == first
@@ -98,7 +99,7 @@ def test_ingest_context_wraps_copy_oserror(
             sample_glossary_md.read_bytes(),
             "glossary.md",
             tmp_path / "context",
-            max_bytes=50 * 1024 * 1024,
+            max_bytes=DEFAULT_MAX_UPLOAD_BYTES,
         )
 
     assert len(created) == 1

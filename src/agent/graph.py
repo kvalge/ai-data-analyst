@@ -71,7 +71,7 @@ from src.agent.history import recent_messages
 from src.agent.prompts import build_system_prompt
 from src.agent.state import AgentState
 from src.agent.summarize import checkpoint_tool_result, is_json_safe, merge_artifacts
-from src.config import Settings
+from src.config import DEFAULT_MAX_ARTIFACTS, Settings
 from src.db.postgres import postgres_configured
 from src.storage.registry import get_file_source
 from src.storage.sources import make_postgres_source
@@ -93,7 +93,12 @@ class CompleteFn(Protocol):
     ) -> str: ...
 
 
-def build_prompt(state: AgentState, *, max_turns: int) -> str:
+def build_prompt(
+    state: AgentState,
+    *,
+    max_turns: int,
+    max_artifacts: int = DEFAULT_MAX_ARTIFACTS,
+) -> str:
     """System prompt, last N turns, latest summary, and artifact paths."""
     parts = [build_system_prompt(hitl_mode=state["hitl_mode"])]
     for message in recent_messages(state["messages"], max_turns=max_turns):
@@ -109,7 +114,9 @@ def build_prompt(state: AgentState, *, max_turns: int) -> str:
         )
     raw_artifacts = state.get("artifacts") or []
     paths = merge_artifacts(
-        raw_artifacts if isinstance(raw_artifacts, list) else [], []
+        raw_artifacts if isinstance(raw_artifacts, list) else [],
+        [],
+        max_artifacts=max_artifacts,
     )
     if paths:
         parts.append(
@@ -363,7 +370,11 @@ def build_graph(
             for message in state["messages"]
         ):
             return {"error": "No user message to reply to."}
-        prompt = build_prompt(state, max_turns=settings.max_prompt_turns)
+        prompt = build_prompt(
+            state,
+            max_turns=settings.max_prompt_turns,
+            max_artifacts=settings.max_artifacts,
+        )
         try:
             reply = _llm_reply(prompt)
             call = interpret_model_reply(reply)
@@ -507,7 +518,10 @@ def build_graph(
         ]
         try:
             return checkpoint_tool_result(
-                name=name, result=result, prior_artifacts=prior
+                name=name,
+                result=result,
+                prior_artifacts=prior,
+                max_artifacts=settings.max_artifacts,
             )
         except (TypeError, ValueError) as exc:
             _LOG.info("graph tool result rejected name=%s", name)

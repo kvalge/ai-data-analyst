@@ -17,6 +17,7 @@ from src.agent.summarize import (
     merge_artifacts,
     summarize_tool_result,
 )
+from src.config import DEFAULT_MAX_ARTIFACTS
 
 
 def test_is_json_safe_accepts_plain_dict():
@@ -85,13 +86,18 @@ def test_merge_artifacts_dedups_repeat_path():
 
 def test_merge_artifacts_keeps_last_k():
     """Older paths drop when the list exceeds the cap."""
-    prior = [f"C:/data/artifacts/{index}.csv" for index in range(8)]
+    prior = [
+        f"C:/data/artifacts/{index}.csv"
+        for index in range(DEFAULT_MAX_ARTIFACTS)
+    ]
     merged = merge_artifacts(
-        prior, ["C:/data/artifacts/new.csv"], max_artifacts=8
+        prior,
+        ["C:/data/artifacts/new.csv"],
+        max_artifacts=DEFAULT_MAX_ARTIFACTS,
     )
     assert "C:/data/artifacts/0.csv" not in merged
     assert merged[-1] == "C:/data/artifacts/new.csv"
-    assert len(merged) == 8
+    assert len(merged) == DEFAULT_MAX_ARTIFACTS
 
 
 def test_merge_artifacts_trims_existing_over_cap():

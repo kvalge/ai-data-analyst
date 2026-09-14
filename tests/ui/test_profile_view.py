@@ -12,6 +12,7 @@ from typing import Any
 
 import pytest
 
+from src.config import DEFAULT_MAX_UPLOAD_BYTES, DEFAULT_SAMPLE_N_ROWS
 from src.storage.registry import save_file_source
 from src.tools.profile_source import profile_source
 from src.ui.profile import (
@@ -27,7 +28,7 @@ from src.ui.profile import (
     schema_rows,
 )
 
-_MAX = 50 * 1024 * 1024
+_MAX = DEFAULT_MAX_UPLOAD_BYTES
 
 
 def _register_sales(tmp_path: Path, sample_sales_csv: Path):
@@ -46,7 +47,7 @@ def sales_profile(tmp_path: Path, sample_sales_csv: Path) -> dict[str, Any]:
     return profile_source(
         upload_dir=upload_dir,
         cache_dir=cache_dir,
-        n_rows=50,
+        n_rows=DEFAULT_SAMPLE_N_ROWS,
         max_bytes=_MAX,
         source_id=saved.source_id,
     )

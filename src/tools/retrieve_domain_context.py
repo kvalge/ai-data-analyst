@@ -8,7 +8,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from src.rag import DEFAULT_TOP_K
+from src.config import DEFAULT_RAG_TOP_K
 from src.rag.index import reindex_context
 from src.rag.retrieve import retrieve_domain_context as search_context_index
 from src.tools.contracts import ToolContract
@@ -30,7 +30,7 @@ RETRIEVE_DOMAIN_CONTEXT = ToolContract(
             "top_k": {
                 "type": "integer",
                 "minimum": 1,
-                "default": DEFAULT_TOP_K,
+                "default": DEFAULT_RAG_TOP_K,
             },
         },
         "required": ["query"],
@@ -71,7 +71,7 @@ def retrieve_domain_context(
     context_dir: Path,
     cache_dir: Path,
     max_bytes: int,
-    top_k: int = DEFAULT_TOP_K,
+    top_k: int = DEFAULT_RAG_TOP_K,
 ) -> dict[str, Any]:
     """Return top-k context snippets. Never indexes data files.
 

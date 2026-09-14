@@ -26,7 +26,6 @@ from src.agent.json_output import (
     validate_json_object,
 )
 from src.config import Settings
-from src.rag import DEFAULT_TOP_K
 from src.tools.registry import TOOL_REGISTRY
 
 _LOG = logging.getLogger(__name__)
@@ -289,6 +288,6 @@ def _injected_kwargs(
             "context_dir": settings.context_dir,
             "cache_dir": settings.cache_dir,
             "max_bytes": settings.max_upload_bytes,
-            "top_k": int(args.get("top_k", DEFAULT_TOP_K)),
+            "top_k": int(args.get("top_k", settings.rag_top_k)),
         }
     raise ValueError(f"Unknown tool: {name}.")

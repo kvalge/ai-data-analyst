@@ -20,8 +20,6 @@ from src.tools.contracts import ToolContract
 
 _LOG = logging.getLogger(__name__)
 
-_CONNECT_TIMEOUT_S = 5
-
 QUERY_DATABASE = ToolContract(
     name="query_database",
     description=(
@@ -94,7 +92,7 @@ def query_database(
             dbname=settings.db_name,
             user=settings.db_user,
             password=settings.db_password,
-            connect_timeout=_CONNECT_TIMEOUT_S,
+            connect_timeout=settings.db_connect_timeout_s,
         ) as connection:
             cursor = connection.execute(cast(Any, sql), bound)
             columns = _column_names(cursor)

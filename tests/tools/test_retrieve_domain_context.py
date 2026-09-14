@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from src.config import load_settings
+from src.config import DEFAULT_MAX_UPLOAD_BYTES, DEFAULT_RAG_TOP_K, load_settings
 from src.storage.registry import save_file_source
 from src.tools.retrieve_domain_context import (
     RETRIEVE_DOMAIN_CONTEXT,
@@ -15,7 +15,7 @@ from src.tools.retrieve_domain_context import (
 from src.agent.execute import run_allowlisted_tool, validate_tool_call
 from tests.tool_schema import assert_keys_match_required
 
-_MAX = 50 * 1024 * 1024
+_MAX = DEFAULT_MAX_UPLOAD_BYTES
 _PLACEHOLDER_MODELS = {
     "OLLAMA_MODEL_PRIMARY": "placeholder-primary:tag",
     "OLLAMA_MODEL_FALLBACK_FAST": "placeholder-fast:tag",
@@ -55,7 +55,7 @@ def test_retrieve_hits_glossary_and_skips_data_files(
         context_dir=context_dir,
         cache_dir=tmp_path / "cache",
         max_bytes=_MAX,
-        top_k=4,
+        top_k=DEFAULT_RAG_TOP_K,
     )
 
     assert result["chunks"]
