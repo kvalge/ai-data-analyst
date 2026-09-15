@@ -32,6 +32,18 @@ def test_timeout_kills_a_sleeper(tmp_path: Path):
     assert time.monotonic() - started < 10
 
 
+def test_child_matplotlib_backend_is_headless(tmp_path: Path):
+    """Charts save headless, so a generated plt.show() cannot block the run."""
+    script = tmp_path / "backend.py"
+    script.write_text(
+        "import os\nprint(os.environ['MPLBACKEND'])\n",
+        encoding="utf-8",
+    )
+    result = run_python_file(script, tmp_path, timeout_s=10)
+    assert result.stdout.strip() == "Agg"
+    assert result.exit_code == 0
+
+
 def test_child_cwd_is_work_dir(tmp_path: Path):
     """The child process current directory is the sandbox work dir."""
     work_dir = tmp_path / "work"

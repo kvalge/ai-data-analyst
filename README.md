@@ -91,6 +91,8 @@ artifact paths from earlier tools. A `.csv` (or `.parquet`) path under
 `ARTIFACT_DIR` is shown as a table in chat. A `.png` path under
 `ARTIFACT_DIR` is shown as an image. The agent is told to save those
 files in the sandbox work dir and not paste large tables into the chat.
+Charts render headless (the sandbox forces `MPLBACKEND=Agg`), so a
+generated `plt.show()` cannot block the run until the timeout.
 When a last-tool summary or artifact path exists, chat offers
 **Download report.md** (summary line and paths only, not tables).
 The file name includes a short thread id and UTC time.

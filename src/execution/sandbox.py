@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -46,6 +47,10 @@ def run_python_file(
     included). Containment is checked before `is_file`, so a disallowed
     path is rejected without an existence probe. cwd alone does not
     decide which file is executed.
+
+    The child gets `MPLBACKEND=Agg`. Charts are written with `savefig`, so
+    an interactive backend is never needed, and a generated `plt.show()`
+    would otherwise block until the timeout and lose the chart.
     """
     if timeout_s <= 0:
         raise SandboxError("timeout_s must be positive.")
@@ -65,6 +70,7 @@ def run_python_file(
         completed = subprocess.run(
             [sys.executable, str(script)],
             cwd=cwd,
+            env={**os.environ, "MPLBACKEND": "Agg"},
             capture_output=True,
             text=True,
             encoding="utf-8",
