@@ -154,6 +154,8 @@ the human may intervene; LangGraph node wiring is plan-time.
 | Auto | Run through automatically | Run without asking (still logged) | Pause above threshold |
 
 Even in Auto, the user can stop the run; nothing is silent.
+Stop is cooperative: an in-flight tool may finish; the graph does
+not start another tool. The UI surfaces `Run stopped.`
 
 **Interrupt points (where the human intervenes):**
 
@@ -337,3 +339,4 @@ These are intentionally not fixed in this spec:
 - 2026-09-13: Follow-up turns see the last tool summary and artifact paths (paths only, not file contents).
 - 2026-09-13: `retrieve_domain_context` is an in-process TF-IDF tool over `CONTEXT_DIR`. Data files are never indexed.
 - 2026-09-13: Domain RAG index persists under `CACHE_DIR` and rebuilds when context files change.
+- 2026-09-14: Chat stop is cooperative: the next tool is skipped; in-flight work may finish.
