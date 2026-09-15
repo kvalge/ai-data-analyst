@@ -92,12 +92,15 @@ with st.sidebar:
         token = f"{uploaded.name}:{len(payload)}"
         if st.session_state.get("ingested_data_token") != token:
             try:
-                ingest_data_upload(
+                source = ingest_data_upload(
                     payload,
                     uploaded.name,
                     settings.upload_dir,
                     max_bytes=settings.max_upload_bytes,
                 )
+                # A fresh upload selects itself, so chat does not stay on an
+                # older source. Later reruns keep whatever the user picks.
+                st.session_state[SELECTED_SOURCE_ID_KEY] = source.source_id
                 st.session_state.ingested_data_token = token
                 st.session_state.data_upload_error = None
             except (FileValidationError, RegistryError) as exc:
@@ -221,8 +224,16 @@ if not profile_id and not preview_id:
     )
 
 st.subheader("Chat")
-st.caption("Local Ollama only. The model may call list, sample, profile, or load.")
 selected = st.session_state.get(SELECTED_SOURCE_ID_KEY)
+active_source = labels.get(selected) if isinstance(selected, str) else None
+st.caption(
+    "Local Ollama only. The model may call list, sample, profile, or load. "
+    + (
+        f"Chat uses **{active_source}**; change it in the sidebar."
+        if active_source
+        else "No source selected."
+    )
+)
 render_chat(
     settings,
     source_ids=[selected] if isinstance(selected, str) and selected else None,

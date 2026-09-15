@@ -78,8 +78,10 @@ streamlit run src/ui/app.py
 
 **Sidebar:** HITL mode (Guided / Standard / Auto; default Standard), New
 chat (a new graph thread; the previous thread stays unused on disk),
-uploads, source list, optional Postgres test. **Main:** preview and
-profile panels (they can stay open together; close either from its
+uploads, source list, optional Postgres test. A new upload becomes the
+**Selected source**, which is the one Profile and chat use; the chat
+caption names it, and you can change it in the sidebar. **Main:** preview
+and profile panels (they can stay open together; close either from its
 heading), then chat. Restarting Streamlit resumes the last thread from
 `CHECKPOINT_PATH` (`./data/checkpoints/graph.sqlite` by default).
 Checkpoints store a short tool summary and artifact paths, not tables.
