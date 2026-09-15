@@ -5,6 +5,7 @@
 import json
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 from src.config import DEFAULT_MAX_UPLOAD_BYTES, DEFAULT_SAMPLE_N_ROWS
@@ -38,6 +39,27 @@ def test_read_sample_by_source_id(tmp_path: Path, sample_sales_csv: Path):
     assert result["rows"][0]["revenue"] == 120
     assert all(row.get("region") != "West" for row in result["rows"])
     assert_keys_match_required(result, READ_FILE_SAMPLE.result_schema)
+
+
+def test_read_sample_by_source_id_xlsx(tmp_path: Path):
+    """An allowlisted .xlsx is sampled, so the Excel engine stays installed."""
+    upload_dir = tmp_path / "uploads"
+    incoming = tmp_path / "sales.xlsx"
+    pd.DataFrame(
+        {"region": ["North", "South", "East"], "revenue": [120, 90, 75]}
+    ).to_excel(incoming, index=False)
+    saved = save_file_source(incoming, upload_dir, original_name="sales.xlsx")
+
+    result = read_file_sample(
+        upload_dir=upload_dir,
+        n_rows=2,
+        max_bytes=_MAX,
+        source_id=saved.source_id,
+    )
+
+    assert result["columns"] == ["region", "revenue"]
+    assert result["row_count"] == 2
+    assert result["rows"][0]["region"] == "North"
 
 
 def test_read_sample_by_path_under_upload_dir(tmp_path: Path, sample_sales_csv: Path):

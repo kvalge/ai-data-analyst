@@ -129,6 +129,10 @@ def _read_sample_frame(path: Path, n_rows: int) -> pd.DataFrame:
             # JSON arrays have no nrows; this reads the whole file (capped by
             # MAX_UPLOAD_BYTES). Line-delimited JSON could use lines=True + nrows.
             return pd.read_json(path).head(n_rows)
-    except (OSError, ValueError, ImportError, UnicodeError) as exc:
+    except ImportError as exc:
+        raise FileValidationError(
+            f"Reading {suffix} files needs an extra package. {exc}"
+        ) from exc
+    except (OSError, ValueError, UnicodeError) as exc:
         raise FileValidationError(f"Could not read a sample from {path.name}.") from exc
     raise FileValidationError(f"Unsupported sample suffix: {suffix}")

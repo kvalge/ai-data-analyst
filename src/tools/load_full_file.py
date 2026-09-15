@@ -303,6 +303,10 @@ def _read_full_frame(path: Path) -> pd.DataFrame:
             return pd.read_excel(path)
         if suffix == ".json":
             return pd.read_json(path)
-    except (OSError, ValueError, ImportError, UnicodeError) as exc:
+    except ImportError as exc:
+        raise FileValidationError(
+            f"Loading {suffix} files needs an extra package. {exc}"
+        ) from exc
+    except (OSError, ValueError, UnicodeError) as exc:
         raise FileValidationError(f"Could not load {path.name}.") from exc
     raise FileValidationError(f"Unsupported load suffix: {suffix}")
