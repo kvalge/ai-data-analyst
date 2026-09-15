@@ -258,14 +258,16 @@ testing.
 
 ## Docker
 
-**Do not start with Docker.** Dev and v1 run as: host venv + host Ollama
-(needed for local GPU/VRAM on this machine) + optional local Postgres.
+**Not in v1.** Dev and v1 run as: host venv + host Ollama (needed for
+local GPU/VRAM on this machine) + optional local Postgres. Phase 8
+documented the revisit; this repo has no Dockerfile or Compose file.
 
 - v1 sandbox = subprocess, not a container.
-- Revisit Docker when packaging for another machine, offering Compose for
-  Postgres, or hardening the sandbox into a container.
-- Ollama stays on the host even if the app is containerized later; do not
-  put `:cloud` models in any compose file.
+- Revisit Docker when packaging the Streamlit app for another machine,
+  offering Compose for Postgres, or hardening the sandbox into a
+  container.
+- Ollama stays on the host even if the app is containerized later; do
+  not put `:cloud` models in any compose file.
 
 ## Roadmap (phased)
 
