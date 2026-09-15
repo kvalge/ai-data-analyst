@@ -25,6 +25,7 @@ from src.agent.json_output import (
     validate_json_object,
 )
 from src.config import Settings
+from src.tools.load_full_file import STATUS_NEEDS_APPROVAL
 from src.tools.registry import TOOL_REGISTRY
 
 _LOG = logging.getLogger(__name__)
@@ -135,12 +136,13 @@ def run_allowlisted_tool(
     )
     _LOG.info("execute tool=%s", checked["name"])
     result = TOOL_REGISTRY[checked["name"]].handler(**kwargs)
-    _write_tool_audit(
-        settings,
-        checked["name"],
-        checked["arguments"],
-        decision,
-    )
+    if result.get("status") != STATUS_NEEDS_APPROVAL:
+        _write_tool_audit(
+            settings,
+            checked["name"],
+            checked["arguments"],
+            decision,
+        )
     return result
 
 
@@ -154,13 +156,15 @@ def _write_tool_audit(
     log_dir = default_audit_dir(settings.upload_dir)
     source_id = source_id_for_audit(arguments)
     if name in CODE_TOOLS:
+        code, truncated = code_text_for_audit(
+            name, arguments, settings.max_prompt_chars
+        )
         append_tool_use(
             log_dir,
             tool=name,
             source_id=source_id,
-            code=code_text_for_audit(
-                name, arguments, settings.max_prompt_chars
-            ),
+            code=code,
+            code_truncated=truncated,
             decision=decision or DECISION_AUTO,
             outcome=OUTCOME_SUCCESS,
         )

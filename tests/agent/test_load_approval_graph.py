@@ -11,6 +11,11 @@ from typing import Any
 import pytest
 from langgraph.types import Command
 
+from src.agent.audit import (
+    OUTCOME_REJECTED,
+    audit_log_path,
+    default_audit_dir,
+)
 from src.agent.graph import build_graph
 from src.agent.load_approval import (
     ACTION_APPROVE,
@@ -135,6 +140,30 @@ def test_reject_does_not_load(settings: Settings):
     assert result["error"] == "Full-file load was rejected."
     assert result["last_tool_result"] is None
     assert result["pending_tool"] is None
+
+
+def test_reject_writes_audit_line(settings: Settings):
+    """A rejected over-limit load is audited; the pause itself is not a success."""
+    source_id = _source_id(settings)
+
+    def fake_complete(prompt: str, **kwargs: Any) -> str:
+        return _tool_json(source_id)
+
+    graph = build_graph(settings=settings, complete_fn=fake_complete)
+    graph.invoke(_user_turn("load the file"), _THREAD)
+    graph.invoke(Command(resume={"action": ACTION_REJECT}), _THREAD)
+    path = audit_log_path(default_audit_dir(settings.upload_dir))
+    records = [
+        json.loads(line)
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    loads = [row for row in records if row["tool"] == "load_full_file"]
+    assert len(loads) == 1
+    assert loads[0]["source_id"] == source_id
+    assert loads[0]["decision"] == ACTION_REJECT
+    assert loads[0]["outcome"] == OUTCOME_REJECTED
+    assert loads[0]["code"] is None
 
 
 def test_auto_still_pauses_over_limit(settings: Settings):

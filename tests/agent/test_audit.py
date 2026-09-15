@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -21,8 +22,11 @@ from src.agent.audit import (
 )
 from src.agent.code_approval import TOOL_RUN_ANALYSIS_CODE
 from src.agent.execute import run_allowlisted_tool
+from src.agent.graph import build_graph
+from src.agent.state import HITL_MODE_AUTO, empty_agent_state
 from src.config import load_settings
 from src.storage.registry import save_file_source
+from src.tools.load_full_file import STATUS_NEEDS_APPROVAL
 from src.validation.data_files import FileValidationError
 
 _PLACEHOLDER_MODELS = {
@@ -172,6 +176,7 @@ def test_append_tool_use_writes_code_decision_and_outcome(tmp_path: Path):
         "code": "print(1)",
         "decision": DECISION_AUTO,
         "outcome": OUTCOME_SUCCESS,
+        "code_truncated": False,
     }
     assert "rows" not in record
     assert "stdout" not in record
@@ -179,13 +184,52 @@ def test_append_tool_use_writes_code_decision_and_outcome(tmp_path: Path):
 
 def test_code_text_for_audit_is_capped():
     """Over-long generated text is truncated. Dataset rows are not added."""
-    text = code_text_for_audit(
+    text, truncated = code_text_for_audit(
         TOOL_RUN_ANALYSIS_CODE,
         {"source_id": "file-a", "code": "print(1)" + "x" * 50},
         limit=8,
     )
     assert text == "print(1)"
+    assert truncated is True
     assert "rows" not in text
+
+
+def test_code_text_for_audit_fits_without_truncation():
+    """A short snippet is stored in full and not flagged as cut."""
+    text, truncated = code_text_for_audit(
+        TOOL_RUN_ANALYSIS_CODE,
+        {"source_id": "file-a", "code": "print(1)"},
+        limit=80,
+    )
+    assert text == "print(1)"
+    assert truncated is False
+
+
+def test_code_text_for_audit_limit_below_one_does_not_truncate():
+    """limit < 1 is no cap, so a long snippet is not flagged as cut."""
+    raw = "print(1)" + "x" * 50
+    text, truncated = code_text_for_audit(
+        TOOL_RUN_ANALYSIS_CODE,
+        {"source_id": "file-a", "code": raw},
+        limit=0,
+    )
+    assert text == raw
+    assert truncated is False
+
+
+def test_append_tool_use_marks_truncated_code(tmp_path: Path):
+    """A cut snippet is flagged so a reviewer does not treat it as the full text."""
+    record = append_tool_use(
+        tmp_path / "logs",
+        tool="run_analysis_code",
+        source_id="file-a",
+        code="print(1)",
+        code_truncated=True,
+        decision=DECISION_AUTO,
+        outcome=OUTCOME_SUCCESS,
+    )
+    assert record["code"] == "print(1)"
+    assert record["code_truncated"] is True
 
 
 def test_source_id_for_audit_does_not_invent_an_id():
@@ -194,3 +238,120 @@ def test_source_id_for_audit_does_not_invent_an_id():
     assert source_id_for_audit({"source_id": "   "}) is None
     assert source_id_for_audit({"source_id": "file-a"}) == "file-a"
     assert source_id_for_audit({"connection_id": "postgres-a"}) == "postgres-a"
+
+
+def test_append_tool_use_write_failure_does_not_raise(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+):
+    """A disk error must not turn a finished tool into a failed turn."""
+    caplog.set_level(logging.WARNING, logger="src.agent.audit")
+
+    def boom(self: Path, *args: object, **kwargs: object) -> None:
+        raise OSError("disk full")
+
+    monkeypatch.setattr(Path, "mkdir", boom)
+    record = append_tool_use(
+        tmp_path / "logs",
+        tool="list_available_sources",
+        source_id=None,
+    )
+    assert record["tool"] == "list_available_sources"
+    assert "audit write failed" in caplog.text
+    assert "OSError" in caplog.text
+    assert not (tmp_path / "logs" / "audit.jsonl").is_file()
+
+
+def test_needs_approval_does_not_write_audit_line(
+    tmp_path: Path, sample_sales_csv: Path
+):
+    """A paused over-limit load is not recorded as a completed use."""
+    settings = load_settings(
+        environ={
+            "OLLAMA_HOST": "http://ollama.test:11434",
+            "MAX_FULL_LOAD_ROWS": "1",
+            **_PLACEHOLDER_MODELS,
+        },
+        load_dotenv_file=False,
+        project_root=tmp_path,
+    )
+    incoming = tmp_path / "sales.csv"
+    incoming.write_bytes(sample_sales_csv.read_bytes())
+    saved = save_file_source(
+        incoming, settings.upload_dir, original_name="sales.csv"
+    )
+    result = run_allowlisted_tool(
+        "load_full_file", {"source_id": saved.source_id}, settings
+    )
+    assert result["status"] == STATUS_NEEDS_APPROVAL
+    assert _lines(settings) == []
+
+
+def test_full_fake_run_writes_expected_audit_keys(
+    tmp_path: Path, sample_sales_csv: Path
+):
+    """One Auto turn records profile, tools, generated code, HITL, and sandbox outcome."""
+    settings = load_settings(
+        environ={"OLLAMA_HOST": "http://ollama.test:11434", **_PLACEHOLDER_MODELS},
+        load_dotenv_file=False,
+        project_root=tmp_path,
+    )
+    incoming = tmp_path / "sales.csv"
+    incoming.write_bytes(sample_sales_csv.read_bytes())
+    saved = save_file_source(
+        incoming, settings.upload_dir, original_name="sales.csv"
+    )
+    replies = [
+        json.dumps({"name": "list_available_sources", "arguments": {}}),
+        json.dumps(
+            {
+                "name": "read_file_sample",
+                "arguments": {"source_id": saved.source_id},
+            }
+        ),
+        json.dumps(
+            {
+                "name": "run_analysis_code",
+                "arguments": {
+                    "source_id": saved.source_id,
+                    "code": "print(1)\n",
+                },
+            }
+        ),
+        "done",
+    ]
+
+    def fake_complete(prompt: str, **kwargs: object) -> str:
+        return replies.pop(0)
+
+    graph = build_graph(settings=settings, complete_fn=fake_complete)
+    state = empty_agent_state(hitl_mode=HITL_MODE_AUTO)
+    state["messages"] = [{"role": "user", "content": "profile then sample then print"}]
+    result = graph.invoke(state, {"configurable": {"thread_id": "audit-full-run"}})
+    assert result["error"] is None
+    records = [json.loads(line) for line in _lines(settings)]
+    assert [row["tool"] for row in records] == [
+        "profile_source",
+        "list_available_sources",
+        "read_file_sample",
+        "run_analysis_code",
+    ]
+    identity_keys = {"timestamp", "tool", "source_id"}
+    for row in records[:3]:
+        assert set(row) == identity_keys
+        datetime.fromisoformat(row["timestamp"])
+    assert records[0]["source_id"] == saved.source_id
+    assert records[1]["source_id"] is None
+    assert records[2]["source_id"] == saved.source_id
+    code_row = records[3]
+    assert set(code_row) == identity_keys | {
+        "code",
+        "decision",
+        "outcome",
+        "code_truncated",
+    }
+    assert code_row["code"] == "print(1)"
+    assert code_row["decision"] == DECISION_AUTO
+    assert code_row["outcome"] == OUTCOME_SUCCESS
+    assert code_row["code_truncated"] is False
+    assert "rows" not in json.dumps(records)
+    assert "North" not in json.dumps(records)

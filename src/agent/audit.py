@@ -12,12 +12,21 @@ from pathlib import Path
 from typing import Any
 
 from src.agent.code_approval import generated_code_text
+from src.config import bound_text
 
 _LOG = logging.getLogger(__name__)
 
 AUDIT_LOG_NAME = "audit.jsonl"
 _RECORD_KEYS = ("timestamp", "tool", "source_id")
-_CODE_RECORD_KEYS = ("timestamp", "tool", "source_id", "code", "decision", "outcome")
+_CODE_RECORD_KEYS = (
+    "timestamp",
+    "tool",
+    "source_id",
+    "code",
+    "decision",
+    "outcome",
+)
+_CODE_SNIPPET_KEYS = _CODE_RECORD_KEYS + ("code_truncated",)
 
 DECISION_AUTO = "auto"
 OUTCOME_SUCCESS = "success"
@@ -46,12 +55,11 @@ def source_id_for_audit(arguments: dict[str, Any]) -> str | None:
 
 def code_text_for_audit(
     name: str, arguments: Mapping[str, Any], limit: int
-) -> str:
-    """SQL or Python from the tool args, capped. Never dataset rows."""
+) -> tuple[str, bool]:
+    """SQL or Python from the tool args, capped. True when the text was cut."""
     text = generated_code_text(name, arguments)
-    if limit < 1:
-        return text
-    return text[:limit]
+    capped = bound_text(text, limit)
+    return capped, len(capped) < len(text)
 
 
 def append_tool_use(
@@ -63,11 +71,9 @@ def append_tool_use(
     code: str | None = None,
     decision: str | None = None,
     outcome: str | None = None,
+    code_truncated: bool = False,
 ) -> dict[str, Any]:
     """Append one JSON object. Never writes file contents or dataset rows."""
-    # TODO: 8.4 catch mkdir/write failures (disk full, permissions) and log a
-    # warning instead of raising after a successful tool result.
-    log_dir.mkdir(parents=True, exist_ok=True)
     stamp = now if now is not None else datetime.now(timezone.utc)
     record: dict[str, Any] = {
         "timestamp": stamp.isoformat(),
@@ -80,8 +86,20 @@ def append_tool_use(
         record["decision"] = decision
         record["outcome"] = outcome
         keys = _CODE_RECORD_KEYS
+        if code is not None:
+            record["code_truncated"] = bool(code_truncated)
+            keys = _CODE_SNIPPET_KEYS
     path = audit_log_path(log_dir)
-    with path.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(record, ensure_ascii=True) + "\n")
-    _LOG.info("audit tool=%s", tool)
+    try:
+        log_dir.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(record, ensure_ascii=True) + "\n")
+        _LOG.info("audit tool=%s", tool)
+    except OSError as exc:
+        _LOG.warning(
+            "audit write failed tool=%s type=%s",
+            tool,
+            type(exc).__name__,
+            exc_info=True,
+        )
     return {key: record[key] for key in keys}

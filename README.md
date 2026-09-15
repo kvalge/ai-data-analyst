@@ -33,10 +33,12 @@ Auto runs it without asking; the tool-use audit line is still written.
   line is still written. Every mode pauses before an over-limit
   `load_full_file` (Approve loads anyway; Reject does not). A
   malformed tool JSON or unknown tool is retried once, then shown as an
-  error; the app does not invent a tool call. Successful tool use appends
-  one JSONL line under `data/logs/audit.jsonl` (tool, source_id, timestamp;
-  generated SQL/Python also logs the code, HITL decision, and sandbox
-  outcome; never file contents or dataset rows).
+  error; the app does not invent a tool call. Successful tool use and graph
+  profiling append one JSONL line under `data/logs/audit.jsonl` (tool,
+  source_id, timestamp; generated SQL/Python also logs the code, whether
+  that snippet was truncated, the HITL decision, and sandbox outcome; a
+  rejected over-limit load logs reject; never file contents or dataset
+  rows). An audit disk error is a warning, not a failed tool.
 
 ## What is not here yet
 

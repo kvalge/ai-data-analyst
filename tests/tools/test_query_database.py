@@ -226,6 +226,7 @@ def test_query_database_audit_line_has_connection_id_and_sql(tmp_path: Path):
     assert record["code"] == _SELECT
     assert record["decision"] == DECISION_AUTO
     assert record["outcome"] == OUTCOME_SUCCESS
+    assert record["code_truncated"] is False
     assert "North" not in line
     assert "super-secret-password" not in line
     assert "rows" not in record

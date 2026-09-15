@@ -88,9 +88,21 @@ def _tool_json(source_id: str, code: str = _PRINT) -> str:
     )
 
 
-def _audit_record(settings: Settings) -> dict[str, Any]:
+def _audit_records(settings: Settings) -> list[dict[str, Any]]:
     path = audit_log_path(default_audit_dir(settings.upload_dir))
-    return json.loads(path.read_text(encoding="utf-8").strip())
+    if not path.is_file():
+        return []
+    return [
+        json.loads(line)
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+
+
+def _audit_record(settings: Settings) -> dict[str, Any]:
+    records = [row for row in _audit_records(settings) if "decision" in row]
+    assert records, "expected a generated-code audit line"
+    return records[-1]
 
 
 def _interrupt_value(result: dict[str, Any]) -> dict[str, Any]:
@@ -130,7 +142,9 @@ def test_auto_runs_analysis_code_without_interrupt(settings: Settings):
         "code",
         "decision",
         "outcome",
+        "code_truncated",
     }
+    assert record["code_truncated"] is False
     assert "rows" not in record
     assert "stdout" not in record
 

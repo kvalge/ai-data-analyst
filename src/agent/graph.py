@@ -53,6 +53,7 @@ from src.agent.json_output import (
     retry_prompt_after_validation,
 )
 from src.agent.load_approval import (
+    ACTION_REJECT,
     apply_load_decision,
     build_load_interrupt,
     is_over_limit_load,
@@ -229,7 +230,7 @@ def build_graph(
         existing = state.get("profile_summary")
         if isinstance(existing, dict) and existing.get("source_id") == source_id:
             return existing
-        return profile_source(
+        summary = profile_source(
             upload_dir=settings.upload_dir,
             cache_dir=settings.cache_dir,
             n_rows=settings.sample_n_rows,
@@ -237,6 +238,12 @@ def build_graph(
             source_id=source_id,
             settings=settings,
         )
+        append_tool_use(
+            default_audit_dir(settings.upload_dir),
+            tool="profile_source",
+            source_id=source_id,
+        )
+        return summary
 
     def _maybe_pause_profile(
         step: str,
@@ -444,13 +451,15 @@ def build_graph(
         outcome: str,
     ) -> None:
         """Log generated SQL/Python, the HITL decision, and sandbox outcome."""
+        code, truncated = code_text_for_audit(
+            name, arguments, settings.max_prompt_chars
+        )
         append_tool_use(
             default_audit_dir(settings.upload_dir),
             tool=name,
             source_id=source_id_for_audit(arguments),
-            code=code_text_for_audit(
-                name, arguments, settings.max_prompt_chars
-            ),
+            code=code,
+            code_truncated=truncated,
             decision=decision,
             outcome=outcome,
         )
@@ -534,8 +543,32 @@ def build_graph(
                 "graph approve_load interrupt source_id=%s",
                 result.get("source_id"),
             )
-            applied = apply_load_decision(interrupt(build_load_interrupt(result)))
+            load_decision = interrupt(build_load_interrupt(result))
+            applied = apply_load_decision(load_decision)
             if applied.get("error"):
+                action = (
+                    load_decision.get("action")
+                    if isinstance(load_decision, dict)
+                    else None
+                )
+                outcome = (
+                    OUTCOME_REJECTED
+                    if action == ACTION_REJECT
+                    else OUTCOME_ERROR
+                )
+                raw_source = result.get("source_id")
+                source_id = (
+                    raw_source
+                    if isinstance(raw_source, str) and raw_source.strip()
+                    else None
+                )
+                append_tool_use(
+                    default_audit_dir(settings.upload_dir),
+                    tool="load_full_file",
+                    source_id=source_id,
+                    decision=action if isinstance(action, str) else None,
+                    outcome=outcome,
+                )
                 return {"error": applied["error"], "pending_tool": None}
             halted = _halt_if_stopped()
             if halted:
