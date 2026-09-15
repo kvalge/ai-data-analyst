@@ -80,6 +80,8 @@ from src.tools.registry import TOOL_REGISTRY
 
 _LOG = logging.getLogger(__name__)
 
+RUN_STOPPED_MESSAGE = "Run stopped."
+
 
 class CompleteFn(Protocol):
     """LLM callable the graph may inject. Matches `complete` keyword args."""
@@ -184,13 +186,22 @@ def build_graph(
     include_postgres: bool = False,
     connect: Callable[..., Any] | None = None,
     checkpointer: Any | None = None,
+    stop_requested: Callable[[], bool] | None = None,
 ) -> Any:
     """Compile START → confirm_sources → profile nodes → agent ⇄ execute_tool.
 
     `connect` is a test seam for query_database. The LLM cannot supply it.
     Tests omit `checkpointer` and get MemorySaver. The app passes SqliteSaver.
+    `stop_requested` is cooperative: in-flight work may finish; the next
+    tool is not started.
     """
     completer = complete_fn or complete
+
+    def _halt_if_stopped() -> dict[str, Any] | None:
+        if stop_requested is None or not stop_requested():
+            return None
+        _LOG.info("graph run stopped")
+        return {"error": RUN_STOPPED_MESSAGE, "pending_tool": None}
 
     def _selected_source_id(state: AgentState) -> str | None:
         ids = [
@@ -248,6 +259,9 @@ def build_graph(
         return {**updates, **applied}
 
     def confirm_sources_node(state: AgentState) -> dict[str, Any]:
+        halted = _halt_if_stopped()
+        if halted:
+            return halted
         sources = list_confirm_sources(
             settings, include_postgres=include_postgres
         )
@@ -300,6 +314,9 @@ def build_graph(
         return updates
 
     def detect_schema_node(state: AgentState) -> dict[str, Any]:
+        halted = _halt_if_stopped()
+        if halted:
+            return halted
         source_id = _selected_source_id(state)
         if not source_id:
             return {"error": "No data source selected."}
@@ -322,6 +339,9 @@ def build_graph(
         return _maybe_pause_profile(SECTION_SCHEMA, summary, state, updates)
 
     def run_dq_node(state: AgentState) -> dict[str, Any]:
+        halted = _halt_if_stopped()
+        if halted:
+            return halted
         source_id = _selected_source_id(state)
         if not source_id:
             return {"error": "No data source selected."}
@@ -336,6 +356,9 @@ def build_graph(
         )
 
     def run_eda_node(state: AgentState) -> dict[str, Any]:
+        halted = _halt_if_stopped()
+        if halted:
+            return halted
         source_id = _selected_source_id(state)
         if not source_id:
             return {"error": "No data source selected."}
@@ -365,6 +388,9 @@ def build_graph(
         return reply
 
     def agent_node(state: AgentState) -> dict[str, Any]:
+        halted = _halt_if_stopped()
+        if halted:
+            return halted
         if not any(
             message.get("role") == "user" and message.get("content", "").strip()
             for message in state["messages"]
@@ -430,6 +456,9 @@ def build_graph(
         )
 
     def execute_tool_node(state: AgentState) -> dict[str, Any]:
+        halted = _halt_if_stopped()
+        if halted:
+            return halted
         pending = state.get("pending_tool")
         if not isinstance(pending, dict):
             return {"error": "Unknown tool.", "pending_tool": None}
@@ -478,6 +507,9 @@ def build_graph(
                 return {"error": applied["error"], "pending_tool": None}
             next_args = applied.get("arguments")
             arguments = next_args if isinstance(next_args, dict) else {}
+        halted = _halt_if_stopped()
+        if halted:
+            return halted
         try:
             result = run_allowlisted_tool(
                 name,
@@ -505,6 +537,9 @@ def build_graph(
             applied = apply_load_decision(interrupt(build_load_interrupt(result)))
             if applied.get("error"):
                 return {"error": applied["error"], "pending_tool": None}
+            halted = _halt_if_stopped()
+            if halted:
+                return halted
             try:
                 result = run_allowlisted_tool(
                     name,

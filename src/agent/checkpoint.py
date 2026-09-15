@@ -42,9 +42,16 @@ def sqlite_checkpointer(checkpoint_path: Path) -> SqliteSaver:
 
     ``SqliteSaver.from_conn_string`` closes the file when the context exits.
     Streamlit keeps the compiled graph in session_state, so the connection
-    must stay open. ``check_same_thread=False`` allows Streamlit reruns.
-    WAL lets a second browser tab read while another session writes; a short
-    busy timeout waits out a colliding writer instead of raising immediately.
+    must stay open. ``check_same_thread=False`` is required because a
+    Streamlit rerun is a new thread, and because chat invoke runs on a
+    worker thread while ``get_state`` polls from the script thread.
+
+    Concurrent use of one ``sqlite3.Connection`` is still unsafe on its
+    own. ``SqliteSaver.cursor()`` holds ``SqliteSaver.lock`` around every
+    read and write, which serializes those two threads. After setup, call
+    saver methods only — do not use ``saver.conn`` from more than one
+    thread. WAL and ``busy_timeout`` are for *other connections* (a
+    second browser tab), not for sharing this connection object.
     """
     checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(checkpoint_path), check_same_thread=False)

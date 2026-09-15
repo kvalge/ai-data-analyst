@@ -5,7 +5,10 @@
 from __future__ import annotations
 
 import logging
+import threading
+import time
 import uuid
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -46,6 +49,10 @@ _LOG = logging.getLogger(__name__)
 GRAPH_KEY = "agent_graph"
 THREAD_ID_KEY = "agent_thread_id"
 CHAT_ERROR_KEY = "chat_error"
+STOP_FLAG_KEY = "chat_stop_flag"
+RUN_ACTIVE_KEY = "chat_run_active"
+RUN_HOLDER_KEY = "chat_run_holder"
+_POLL_S = 0.3
 
 
 def ensure_thread_id(
@@ -71,6 +78,9 @@ def start_new_chat(
     session_state: Any, *, checkpoint_path: Path | None = None
 ) -> str:
     """Mint a new thread id. The previous checkpoint is left unused."""
+    request_chat_stop(session_state)
+    session_state.pop(RUN_ACTIVE_KEY, None)
+    session_state.pop(RUN_HOLDER_KEY, None)
     thread_id = str(uuid.uuid4())
     session_state[THREAD_ID_KEY] = thread_id
     session_state.pop(CHAT_ERROR_KEY, None)
@@ -79,13 +89,72 @@ def start_new_chat(
     return thread_id
 
 
+def ensure_stop_flag(session_state: Any) -> threading.Event:
+    """Session-lived stop flag. The compiled graph reads this Event."""
+    flag = session_state.get(STOP_FLAG_KEY)
+    if isinstance(flag, threading.Event):
+        return flag
+    flag = threading.Event()
+    session_state[STOP_FLAG_KEY] = flag
+    return flag
+
+
+def request_chat_stop(session_state: Any) -> None:
+    """Ask the graph not to start another tool. In-flight work may finish."""
+    ensure_stop_flag(session_state).set()
+
+
+def start_chat_run(
+    session_state: Any, invoke_fn: Callable[[], dict[str, Any]]
+) -> None:
+    """Run invoke off the Streamlit thread so Stop can be clicked."""
+    if session_state.get(RUN_ACTIVE_KEY):
+        holder = session_state.get(RUN_HOLDER_KEY)
+        if isinstance(holder, dict) and not holder.get("done"):
+            return
+    ensure_stop_flag(session_state).clear()
+    holder: dict[str, Any] = {"result": None, "done": False}
+
+    def _run() -> None:
+        try:
+            holder["result"] = invoke_fn()
+        except Exception as exc:
+            _LOG.info("UI chat invoke failed")
+            holder["result"] = {
+                "error": str(exc).strip() or "Chat failed.",
+            }
+        finally:
+            holder["done"] = True
+
+    session_state[RUN_HOLDER_KEY] = holder
+    session_state[RUN_ACTIVE_KEY] = True
+    threading.Thread(target=_run, daemon=True).start()
+
+
+def finish_chat_run(session_state: Any) -> dict[str, Any] | None:
+    """Return a finished background invoke result and clear the run keys."""
+    if not session_state.get(RUN_ACTIVE_KEY):
+        return None
+    holder = session_state.get(RUN_HOLDER_KEY)
+    if not isinstance(holder, dict) or not holder.get("done"):
+        return None
+    result = holder.get("result")
+    session_state.pop(RUN_HOLDER_KEY, None)
+    session_state[RUN_ACTIVE_KEY] = False
+    if isinstance(result, dict):
+        return result
+    return {"error": "Chat failed."}
+
+
 def ensure_graph(session_state: Any, settings: Settings) -> Any:
     """Reuse the compiled graph so the sqlite checkpointer stays open."""
+    flag = ensure_stop_flag(session_state)
     graph = session_state.get(GRAPH_KEY)
     if graph is None:
         graph = build_graph(
             settings=settings,
             checkpointer=sqlite_checkpointer(settings.checkpoint_path),
+            stop_requested=flag.is_set,
         )
         session_state[GRAPH_KEY] = graph
     return graph
@@ -243,6 +312,10 @@ def render_chat(
     thread_id = ensure_thread_id(
         st.session_state, checkpoint_path=settings.checkpoint_path
     )
+    finished = finish_chat_run(st.session_state)
+    if finished is not None:
+        store_invoke_result(st.session_state, finished)
+        st.rerun()
     snap = graph_snapshot(graph, thread_id)
     for message in graph_messages(graph, thread_id, snap=snap):
         role = message.get("role")
@@ -273,8 +346,9 @@ def render_chat(
     )
     if error:
         st.error(error)
+    run_active = bool(st.session_state.get(RUN_ACTIVE_KEY))
     pending = graph_interrupt_payload(graph, thread_id, snap=snap)
-    if pending is not None:
+    if pending is not None and not run_active:
         kind = pending.get("kind")
         decision: dict[str, Any] | None = None
         caption = "Confirm, select, or abort the data source before chatting."
@@ -296,12 +370,22 @@ def render_chat(
             decision = render_load_pause(pending)
             caption = "Approve or reject an over-limit full-file load before chatting."
         if decision is not None:
-            result = resume_interrupt(
-                graph, decision=decision, thread_id=thread_id
+            chosen = decision
+            start_chat_run(
+                st.session_state,
+                lambda: resume_interrupt(
+                    graph, decision=chosen, thread_id=thread_id
+                ),
             )
-            store_invoke_result(st.session_state, result)
             st.rerun()
         st.caption(caption)
+        return
+    if run_active:
+        if st.button("Stop", key="chat_stop"):
+            request_chat_stop(st.session_state)
+        st.caption("Waiting for the local model… Stop skips the next tool.")
+        time.sleep(_POLL_S)
+        st.rerun()
         return
     if not settings.ollama_model_primary:
         st.caption("Set OLLAMA_MODEL_* in .env to enable chat.")
@@ -312,18 +396,14 @@ def render_chat(
         st.error("Set OLLAMA_MODEL_PRIMARY in .env before chatting.")
         return
     mode = resolve_hitl_mode(st.session_state.get(HITL_MODE_KEY))
-    try:
-        with st.spinner("Waiting for the local model…"):
-            result = invoke_user_turn(
-                graph,
-                user_text=typed,
-                hitl_mode=str(mode),
-                thread_id=thread_id,
-                source_ids=source_ids,
-            )
-    except Exception as exc:
-        st.session_state[CHAT_ERROR_KEY] = str(exc).strip() or "Chat failed."
-        st.rerun()
-        return
-    store_invoke_result(st.session_state, result)
+    start_chat_run(
+        st.session_state,
+        lambda: invoke_user_turn(
+            graph,
+            user_text=typed,
+            hitl_mode=str(mode),
+            thread_id=thread_id,
+            source_ids=source_ids,
+        ),
+    )
     st.rerun()

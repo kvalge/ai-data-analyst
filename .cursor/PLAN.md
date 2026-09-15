@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission. Code `# TODO` / `# FIXME` comments are also listed under **Open TODOs (code)** below.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** **3.12 done.** **3.13 done.** **4.1 done.** **4.2 done.** **4.3 done.** **4.4 done.** **4.5 done.** **4.6 done.** **4.7 done.** **4.8 done.** **4.9 done.** **4.10 done.** **4.11 done.** **4.12 done.** **5.1 done.** **5.2 done.** **5.3 done.** **5.4 done.** **5.5 done.** **6.1 done.** **6.2 done.** **6.3 done.** **6.4 done.** **6.5 done.** **6.6 skipped.** **7.1 done.** **7.2 done.** **7.3 done.** **7.4 done.** **7.5 skipped.** **8.1 done.** **8.2 done.** Next step: **8.3**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** **3.12 done.** **3.13 done.** **4.1 done.** **4.2 done.** **4.3 done.** **4.4 done.** **4.5 done.** **4.6 done.** **4.7 done.** **4.8 done.** **4.9 done.** **4.10 done.** **4.11 done.** **4.12 done.** **5.1 done.** **5.2 done.** **5.3 done.** **5.4 done.** **5.5 done.** **6.1 done.** **6.2 done.** **6.3 done.** **6.4 done.** **6.5 done.** **6.6 skipped.** **7.1 done.** **7.2 done.** **7.3 done.** **7.4 done.** **7.5 skipped.** **8.1 done.** **8.2 done.** **8.3 done.** Next step: **8.4**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -478,7 +478,7 @@ No sandbox code execution yet. Tools: `list_available_sources`, `read_file_sampl
 - [x] Persist checkpoints to `CHECKPOINT_PATH`.
 - [x] Restart Streamlit: resume the same thread.
 - [x] Test: MemorySaver for unit tests; optional sqlite round-trip test on tmp path.
-- App compiles with a long-lived `SqliteSaver` (`sqlite3.connect`, not `from_conn_string`, which closes the file). Each Streamlit session opens its own connection; `PRAGMA journal_mode=WAL` and `busy_timeout=5000` tolerate a second browser tab on the same file. Thread id is stored beside the sqlite file (`graph.thread`) so a process restart reopens the same thread. **New chat** writes a new id; the prior sqlite thread is left unused. Package: `langgraph-checkpoint-sqlite==3.1.1`.
+- App compiles with a long-lived `SqliteSaver` (`sqlite3.connect`, not `from_conn_string`, which closes the file). Each Streamlit session opens its own connection; `PRAGMA journal_mode=WAL` and `busy_timeout=5000` tolerate a second browser tab on the same file. Intra-process, chat invoke on a worker thread and `get_state` on the script thread share that connection; `SqliteSaver.cursor()` holds a lock so those calls do not race. Thread id is stored beside the sqlite file (`graph.thread`) so a process restart reopens the same thread. **New chat** writes a new id; the prior sqlite thread is left unused. Package: `langgraph-checkpoint-sqlite==3.1.1`.
 
 ### 5.3 Result summaries in state
 
@@ -587,8 +587,9 @@ No sandbox code execution yet. Tools: `list_available_sources`, `read_file_sampl
 
 ### 8.3 Stop / cancel in UI
 
-- User can stop a run; graph should not start a new tool after stop.
-- Manual check; test if cooperative cancel is easy.
+- [x] User can stop a run; graph should not start a new tool after stop.
+- [x] Manual check; test if cooperative cancel is easy.
+- Cooperative `stop_requested` on the graph: in-flight work may finish; confirm, profile, agent, and execute_tool halt before the next tool. Chat runs invoke off the Streamlit thread so **Stop** can set the flag. Error is `Run stopped.` Worker invoke and script-thread `get_state` share one SqliteSaver; `cursor()` serializes them (WAL/`busy_timeout` are for other connections). `start_chat_run` ignores a second start while the holder is still running, so a double-submit does not overlap two writes.
 
 ### 8.4 Audit log completeness
 
@@ -672,6 +673,6 @@ Not current-step work and not code `# TODO`s. Revisit when the listed step runs.
 
 ## Current focus
 
-**8.2 done.** Next: **8.3 Stop / cancel in UI**.
-Do not start 8.3 until you say to proceed.
-Prompts and extracted context text are capped at MAX_PROMPT_CHARS. Retry instruction is placed first so truncation cannot drop it.
+**8.3 done.** Next: **8.4 Audit log completeness**.
+Do not start 8.4 until you say to proceed.
+Stop in chat is cooperative: the graph will not start another tool.

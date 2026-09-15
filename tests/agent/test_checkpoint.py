@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -132,3 +133,49 @@ def test_sqlite_round_trip_restores_messages(settings: Settings, tmp_path: Path)
         assert [m["content"] for m in messages] == ["hello", "plain reply"]
     finally:
         second.conn.close()
+
+
+def test_sqlite_get_state_during_invoke_is_serialized(
+    settings: Settings, tmp_path: Path
+):
+    """Worker invoke and script-thread get_state share one locked SqliteSaver."""
+    entered = threading.Event()
+    release = threading.Event()
+    read_ok = threading.Event()
+
+    def fake_complete(prompt: str, **kwargs: Any) -> str:
+        entered.set()
+        if not release.wait(timeout=2):
+            raise AssertionError("get_state did not run during invoke")
+        return "plain reply"
+
+    saver = sqlite_checkpointer(tmp_path / "graph.sqlite")
+    try:
+        graph = build_graph(
+            settings=settings,
+            complete_fn=fake_complete,
+            checkpointer=saver,
+        )
+
+        def reader() -> None:
+            if not entered.wait(timeout=2):
+                raise AssertionError("invoke never reached the model")
+            graph.get_state(_THREAD)
+            read_ok.set()
+            release.set()
+
+        worker = threading.Thread(
+            target=graph.invoke, args=(_user_turn("hello"), _THREAD)
+        )
+        poller = threading.Thread(target=reader)
+        worker.start()
+        poller.start()
+        worker.join(timeout=5)
+        poller.join(timeout=5)
+        assert not worker.is_alive()
+        assert not poller.is_alive()
+        assert read_ok.is_set()
+        messages = graph.get_state(_THREAD).values["messages"]
+        assert [m["content"] for m in messages] == ["hello", "plain reply"]
+    finally:
+        saver.conn.close()

@@ -10,7 +10,7 @@ from typing import Any
 
 import pytest
 
-from src.agent.graph import build_graph
+from src.agent.graph import RUN_STOPPED_MESSAGE, build_graph
 from src.agent.json_output import STRICT_RETRY_INSTRUCTION
 from src.agent.llm import LlmError
 from src.agent.prompts import build_system_prompt
@@ -364,3 +364,58 @@ def test_malformed_json_retries_then_fails_without_a_guessed_call(
     assert result["pending_tool"] is None
     assert result["last_tool_result"] is None
     assert [m["role"] for m in result["messages"]] == ["user"]
+
+
+def test_stop_before_agent_skips_llm(settings: Settings):
+    """A stop already set does not call the model or start a tool."""
+    calls = 0
+
+    def fake_complete(prompt: str, **kwargs: Any) -> str:
+        nonlocal calls
+        calls += 1
+        return "should not run"
+
+    graph = build_graph(
+        settings=settings,
+        complete_fn=fake_complete,
+        stop_requested=lambda: True,
+    )
+    result = graph.invoke(_user_turn("hello"), _THREAD)
+    assert calls == 0
+    assert result["error"] == RUN_STOPPED_MESSAGE
+    assert result["pending_tool"] is None
+    assert [m["role"] for m in result["messages"]] == ["user"]
+
+
+def test_stop_after_first_tool_skips_the_next_tool(settings: Settings):
+    """After stop, execute_tool does not start another tool."""
+    source_id = list_file_sources(settings.upload_dir)[0].source_id
+    stopped = {"value": False}
+    replies = [
+        json.dumps({"name": "list_available_sources", "arguments": {}}),
+        json.dumps(
+            {
+                "name": "read_file_sample",
+                "arguments": {"source_id": source_id},
+            }
+        ),
+    ]
+
+    def fake_complete(prompt: str, **kwargs: Any) -> str:
+        reply = replies.pop(0)
+        if not replies:
+            stopped["value"] = True
+        return reply
+
+    graph = build_graph(
+        settings=settings,
+        complete_fn=fake_complete,
+        stop_requested=lambda: stopped["value"],
+    )
+    result = graph.invoke(_user_turn("list then sample"), _THREAD)
+    assert result["error"] == RUN_STOPPED_MESSAGE
+    assert result["pending_tool"] is None
+    stored = result["last_tool_result"]
+    assert stored is not None
+    assert stored["name"] == "list_available_sources"
+    assert "columns" not in stored

@@ -60,7 +60,7 @@ from src.agent.execute import (
     run_allowlisted_tool,
     validate_tool_call,
 )
-from src.agent.graph import CompleteFn, build_graph, build_prompt
+from src.agent.graph import CompleteFn, build_graph, build_prompt, RUN_STOPPED_MESSAGE
 from src.agent.llm import (
     ROLE_AGENTIC,
     ROLE_CODING,
@@ -134,6 +134,7 @@ __all__ = [
     "build_profile_interrupt",
     "decide_confirm_reason",
     "should_pause_profiling",
+    "RUN_STOPPED_MESSAGE",
     "build_graph",
     "build_prompt",
     "KIND_PYTHON",

@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+import threading
+import time
 from pathlib import Path
 from typing import Any
 
@@ -18,14 +20,19 @@ from src.config import Settings, load_settings
 from src.storage.registry import save_file_source
 from src.ui.chat import (
     CHAT_ERROR_KEY,
+    RUN_ACTIVE_KEY,
     THREAD_ID_KEY,
+    ensure_stop_flag,
     ensure_thread_id,
+    finish_chat_run,
     graph_error,
     graph_interrupt_payload,
     graph_messages,
     graph_profile_summary,
     graph_snapshot,
     invoke_user_turn,
+    request_chat_stop,
+    start_chat_run,
     start_new_chat,
     store_invoke_result,
     visible_chat_error,
@@ -245,6 +252,64 @@ def test_start_new_chat_replaces_thread_and_clears_error():
     assert new_id != "old-thread"
     assert session[THREAD_ID_KEY] == new_id
     assert CHAT_ERROR_KEY not in session
+
+
+def test_start_new_chat_requests_stop():
+    """New chat asks an in-flight turn not to start another tool."""
+    session: dict[str, object] = {THREAD_ID_KEY: "old-thread"}
+    start_new_chat(session)
+    assert ensure_stop_flag(session).is_set()
+
+
+def test_request_chat_stop_sets_the_session_flag():
+    """Stop is a session Event the compiled graph can poll."""
+    session: dict[str, object] = {}
+    request_chat_stop(session)
+    assert ensure_stop_flag(session).is_set()
+
+
+def _wait_for_chat_run(session: dict[str, object]) -> dict[str, Any] | None:
+    """Poll finish_chat_run until the background invoke stores a result."""
+    deadline = time.monotonic() + 2
+    while time.monotonic() < deadline:
+        result = finish_chat_run(session)
+        if result is not None:
+            return result
+        time.sleep(0.02)
+    return None
+
+
+def test_start_chat_run_records_invoke_result():
+    """A background invoke stores its result for the next Streamlit rerun."""
+    session: dict[str, object] = {}
+    start_chat_run(session, lambda: {"error": None, "messages": []})
+    result = _wait_for_chat_run(session)
+    assert result == {"error": None, "messages": []}
+    assert not session.get(RUN_ACTIVE_KEY)
+
+
+def test_start_chat_run_ignores_a_second_start_while_busy():
+    """A double-submit does not spawn a second invoke while the first is running."""
+    session: dict[str, object] = {}
+    release = threading.Event()
+    calls = {"first": 0, "second": 0}
+
+    def first() -> dict[str, Any]:
+        calls["first"] += 1
+        if not release.wait(timeout=2):
+            raise AssertionError("first invoke was not released")
+        return {"error": None, "id": "first"}
+
+    def second() -> dict[str, Any]:
+        calls["second"] += 1
+        return {"error": None, "id": "second"}
+
+    start_chat_run(session, first)
+    start_chat_run(session, second)
+    release.set()
+    result = _wait_for_chat_run(session)
+    assert calls == {"first": 1, "second": 0}
+    assert result == {"error": None, "id": "first"}
 
 
 def test_ensure_thread_id_restores_sidecar(tmp_path: Path):

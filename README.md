@@ -93,8 +93,9 @@ The file name includes a short thread id and UTC time.
 
 In **Guided** mode, chat pauses after schema, then data quality, then EDA
 (Continue / Skip remaining / Abort). Standard and Auto run those steps
-without pausing. The sidebar Profile button always shows the full cached
-summary.
+without pausing. While a turn is running, chat shows **Stop**; the graph
+does not start another tool (an in-flight tool may finish). The sidebar
+Profile button always shows the full cached summary.
 
 Optional Postgres: set `DB_NAME` and `DB_USER` in `.env`. Use **Test
 connection**, then **Use configured database** to list it as a source.
