@@ -217,6 +217,7 @@ outliers) and are separate from the engineering validators above.
 
 No metrics UI in v1. Logs are structured (logger, not print). Audit log
 records which sources were touched and which generated code/SQL ran.
+A failed audit write is a warning; it does not fail the tool.
 
 ## Memory
 
@@ -340,3 +341,4 @@ These are intentionally not fixed in this spec:
 - 2026-09-13: `retrieve_domain_context` is an in-process TF-IDF tool over `CONTEXT_DIR`. Data files are never indexed.
 - 2026-09-13: Domain RAG index persists under `CACHE_DIR` and rebuilds when context files change.
 - 2026-09-14: Chat stop is cooperative: the next tool is skipped; in-flight work may finish.
+- 2026-09-15: A failed audit write is a warning, not a failed tool.
