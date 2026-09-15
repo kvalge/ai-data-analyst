@@ -1,9 +1,14 @@
 # compare_ollama_models.py
+# python scripts/compare_ollama_models.py
 
 """Benchmark latency and compare outputs of the project's Ollama models.
 
 Reads OLLAMA_HOST and the four OLLAMA_MODEL_* names from .env, sends the
 same prompts to every model, and prints timing plus the generated text.
+
+Prompts come from the shared eval corpus (`tests/eval/prompts.json`), so
+this script and `pytest -m ollama` exercise the same text. This script
+sends every prompt to every model; the pytest suite uses each case's role.
 
 Usage:
     python scripts/compare_ollama_models.py
@@ -26,7 +31,11 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 load_dotenv(ROOT / ".env")
+
+from tests.eval.corpus import KIND_SPEED, cases_of_kind, load_cases  # noqa: E402
 
 MODEL_ROLES = (
     ("PRIMARY", "OLLAMA_MODEL_PRIMARY"),
@@ -35,40 +44,15 @@ MODEL_ROLES = (
     ("CODING", "OLLAMA_MODEL_CODING"),
 )
 
-PROMPTS = (
-    {
-        "name": "speed",
-        "text": "Reply with exactly one word: OK",
-    },
-    {
-        "name": "data_analysis",
-        "text": (
-            "A shop sold 120, 95, 130, 80, and 150 units over five days. "
-            "Give the mean, the day with the largest drop vs the previous day, "
-            "and one sentence on what a manager should look at next. "
-            "Be concise."
-        ),
-    },
-    {
-        "name": "pandas_code",
-        "text": (
-            "Write a short pandas snippet that loads sales.csv with columns "
-            "date, region, revenue; parses date; and prints revenue by region "
-            "and by month. Return only the code."
-        ),
-    },
-    {
-        "name": "agent_plan",
-        "text": (
-            "A user uploaded a messy Excel file of customer orders and asked "
-            "'why did revenue fall last quarter?'. List 5 numbered analysis "
-            "steps a data-analyst agent should take before answering. "
-            "One line per step."
-        ),
-    },
-)
 
-QUICK_PROMPTS = PROMPTS[:1]
+def load_prompts(*, quick: bool, custom: str | None) -> list[dict[str, str]]:
+    """Return {name, text} prompts from the shared corpus, or one custom prompt."""
+    if custom:
+        return [{"name": "custom", "text": custom}]
+    cases = load_cases()
+    if quick:
+        cases = cases_of_kind(KIND_SPEED, cases)
+    return [{"name": case.id, "text": case.prompt} for case in cases]
 
 
 @dataclass
@@ -278,7 +262,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--quick",
         action="store_true",
-        help="Run only the one-word speed prompt.",
+        help="Run only the corpus speed prompts.",
     )
     parser.add_argument(
         "--prompt",
@@ -303,12 +287,7 @@ def main() -> int:
     host = os.getenv("OLLAMA_HOST", "http://localhost:11434").rstrip("/")
     models = load_models()
 
-    if args.prompt:
-        prompts = [{"name": "custom", "text": args.prompt}]
-    elif args.quick:
-        prompts = list(QUICK_PROMPTS)
-    else:
-        prompts = list(PROMPTS)
+    prompts = load_prompts(quick=args.quick, custom=args.prompt)
 
     print("Ollama model comparison")
     print(f"Host: {host}")

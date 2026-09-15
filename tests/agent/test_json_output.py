@@ -43,6 +43,31 @@ def test_strip_language_tagged_fence():
     assert strip_markdown_fences("```sql\nSELECT 1\n```") == "SELECT 1"
 
 
+def test_strip_dangling_closing_fence():
+    """A local model emitted tool JSON plus a lone closing fence (eval finding)."""
+    raw = '{"name": "read_file_sample"}\n```'
+    assert strip_markdown_fences(raw) == '{"name": "read_file_sample"}'
+
+
+def test_strip_dangling_opening_fence():
+    """The other half of the same artifact: an opener with no closer."""
+    raw = '```json\n{"name": "read_file_sample"}'
+    assert strip_markdown_fences(raw) == '{"name": "read_file_sample"}'
+
+
+def test_lone_fence_inside_prose_is_left_alone():
+    """One delimiter mid-text is not a wrapper, so nothing is trimmed."""
+    raw = 'Here you go:\n```\n{"name": "x"}'
+    assert strip_markdown_fences(raw) == raw
+
+
+def test_parse_json_with_dangling_closing_fence():
+    """The unbalanced artifact parses instead of costing a strict retry."""
+    assert parse_json_output('{"name": "profile_source"}\n```', _SCHEMA) == {
+        "name": "profile_source"
+    }
+
+
 def test_parse_fenced_json():
     """Fenced JSON loads and matches the schema."""
     raw = '```json\n{"name": "list_available_sources"}\n```'

@@ -26,6 +26,8 @@ _FENCED = re.compile(
     r"^```[A-Za-z0-9_+-]*[ \t]*\r?\n(.*?)[ \t]*\r?\n?```$",
     flags=re.IGNORECASE | re.DOTALL,
 )
+_UNBALANCED_FENCE_LEAD = re.compile(r"^```[A-Za-z0-9_+-]*[ \t]*\r?\n")
+_UNBALANCED_FENCE_TAIL = re.compile(r"\r?\n?[ \t]*```[ \t]*$")
 
 
 class JsonOutputError(ValueError):
@@ -60,12 +62,21 @@ def retry_prompt_after_validation(
 
 
 def strip_markdown_fences(text: str) -> str:
-    """Remove a wrapping markdown fence (optional language tag)."""
+    """Remove a wrapping markdown fence (optional language tag).
+
+    A model sometimes emits only half of the fence. One unbalanced delimiter
+    at the start or end is a wrapping artifact, so it is removed too. Two or
+    more are left alone: that is content or prose, and prose is never
+    trimmed down to the object it surrounds.
+    """
     stripped = text.strip()
     match = _FENCED.fullmatch(stripped)
     if match:
         return match.group(1).strip()
-    return stripped
+    if stripped.count("```") == 1:
+        stripped = _UNBALANCED_FENCE_LEAD.sub("", stripped, count=1)
+        stripped = _UNBALANCED_FENCE_TAIL.sub("", stripped, count=1)
+    return stripped.strip()
 
 
 def parse_json_output(text: str, schema: Mapping[str, Any]) -> dict[str, Any]:

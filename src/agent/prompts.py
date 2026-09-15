@@ -29,6 +29,12 @@ _DATA_SAFETY = (
 _TOOL_USE = (
     "Use only the tools provided for this turn. Do not invent a tool name. "
     "If a tool fails or arguments are invalid, do not guess a result. "
+    "list_available_sources answers what data is registered. "
+    "read_file_sample answers what a source looks like: column names and a few "
+    "raw rows, with no statistics. "
+    "profile_source adds dtypes, null counts, duplicates, and outlier stats; "
+    "use it for data-quality or summary-statistic questions, not for a plain "
+    "look at the rows. "
     "profile_source is a bounded-head overview, not an exact whole-file profile. "
     "Call load_full_file only when a sample is not enough. "
     "query_database runs one parameterized SELECT or WITH against the "
@@ -83,16 +89,29 @@ def _hitl_rules(hitl_mode: str) -> str:
     )
 
 
+def _tool_signature(name: str) -> str:
+    """`name(required, [optional])` read from the tool's own input schema."""
+    schema = TOOL_REGISTRY[name].contract.input_schema
+    properties = schema.get("properties") or {}
+    required = [key for key in (schema.get("required") or []) if key in properties]
+    optional = [key for key in properties if key not in required]
+    args = list(required) + [f"[{key}]" for key in optional]
+    return f"{name}({', '.join(args)})"
+
+
 def build_system_prompt(*, hitl_mode: str = HITL_MODE_STANDARD) -> str:
     """Return the system prompt for `hitl_mode`. Unknown modes are not guessed."""
     if hitl_mode not in ALLOWED_HITL_MODES:
         raise ValueError(f"Unknown hitl_mode: {hitl_mode}.")
-    tools = ", ".join(TOOL_REGISTRY)
+    # Argument names come from the contracts, so the model never guesses them.
+    tools = "; ".join(_tool_signature(name) for name in TOOL_REGISTRY)
     return "\n\n".join(
         (
             _ROLE,
             _DATA_SAFETY,
-            _TOOL_USE + f" Registered tools: {tools}.",
+            _TOOL_USE
+            + " Registered tools, with required and [optional] arguments, "
+            + f"and no others: {tools}.",
             _OUTPUT,
             _hitl_rules(hitl_mode),
         )

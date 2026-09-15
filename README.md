@@ -118,7 +118,34 @@ From the repo root:
 
 Typecheck covers `src/` only. Tests nest under `tests/` by `src/` package
 (`tests/agent/`, `tests/tools/`, …). Shared fixtures stay in
-`tests/conftest.py` and `tests/fixtures/`. `pytest` still runs everything.
+`tests/conftest.py` and `tests/fixtures/`.
+
+Plain `pytest` runs everything that needs no model: tests marked `ollama`
+are deselected, so the default suite passes with Ollama stopped.
+
+## Eval
+
+The eval prompts live in `tests/eval/prompts.json` and are shared by the
+pytest eval suite and the comparison script, so a prompt change lands in
+both. They are synthetic: no dataset rows, no credentials.
+
+```powershell
+.\venv\Scripts\python.exe -m pytest -m ollama          # live-model eval
+.\venv\Scripts\python.exe scripts\compare_ollama_models.py --quick
+```
+
+`pytest -m ollama` needs Ollama running and the four `OLLAMA_MODEL_*`
+names set; it skips if they are missing. Each case asserts on real output:
+tool-selection cases must produce the expected tool name, the fenced-JSON
+case must survive fence stripping and schema validation, and the coding
+case must pass the AST check. A case gets the same single strict retry the
+graph allows, so the eval measures the shipped pipeline.
+
+`compare_ollama_models.py` sends every corpus prompt to all four models
+and prints latency and output, for picking the lineup by hand.
+
+Nothing in the test or eval path calls a cloud API; both go only to the
+local Ollama host, and `:cloud` model tags are rejected.
 
 ## Docker
 

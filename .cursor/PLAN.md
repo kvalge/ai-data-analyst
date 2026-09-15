@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission. Code `# TODO` / `# FIXME` comments are also listed under **Open TODOs (code)** below.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** **3.12 done.** **3.13 done.** **4.1 done.** **4.2 done.** **4.3 done.** **4.4 done.** **4.5 done.** **4.6 done.** **4.7 done.** **4.8 done.** **4.9 done.** **4.10 done.** **4.11 done.** **4.12 done.** **5.1 done.** **5.2 done.** **5.3 done.** **5.4 done.** **5.5 done.** **6.1 done.** **6.2 done.** **6.3 done.** **6.4 done.** **6.5 done.** **6.6 skipped.** **7.1 done.** **7.2 done.** **7.3 done.** **7.4 done.** **7.5 skipped.** **8.1 done.** **8.2 done.** **8.3 done.** **8.4 done.** **8.5 done.** Next step: **9.1**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** **3.12 done.** **3.13 done.** **4.1 done.** **4.2 done.** **4.3 done.** **4.4 done.** **4.5 done.** **4.6 done.** **4.7 done.** **4.8 done.** **4.9 done.** **4.10 done.** **4.11 done.** **4.12 done.** **5.1 done.** **5.2 done.** **5.3 done.** **5.4 done.** **5.5 done.** **6.1 done.** **6.2 done.** **6.3 done.** **6.4 done.** **6.5 done.** **6.6 skipped.** **7.1 done.** **7.2 done.** **7.3 done.** **7.4 done.** **7.5 skipped.** **8.1 done.** **8.2 done.** **8.3 done.** **8.4 done.** **8.5 done.** **9.1 done.** **9.2 done.** **9.3 done.** **9.4 done.** **9.5 done.** Next step: **review Phase 9**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -22,7 +22,7 @@ Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 | MCP server | Not in v1. In-process MCP-shaped contracts only. |
 | Docker | Documented in 8.5; not adopted. No Dockerfile/Compose. Ollama stays on the host. |
 | Type checker | **pyright**, `basic` mode, **`src/` only**. No mypy, no strict mode, no pandas stubs, no CI/pre-commit hook in v1. Run by hand (`pyright`) like `pytest`. |
-| Test layout | Nested under `tests/` mirroring `src/` packages. Root `conftest.py`, `tests/fixtures/`, and `tests/tool_schema.py` stay shared. Default `pytest` still runs everything. |
+| Test layout | Nested under `tests/` mirroring `src/` packages. Root `conftest.py`, `tests/fixtures/`, and `tests/tool_schema.py` stay shared. Default `pytest` runs everything except the `ollama` marker (9.1); `tests/eval/` holds the corpus and its runner. |
 | File source registry | **One** `registry.json` in `UPLOAD_DIR`. Single-user local; no per-source sidecars. 1.7 also adds `list_file_sources()` (not the 1.8 tool) for round-trip tests. |
 | Context same-name upload | **Overwrite** the file in `CONTEXT_DIR`. Basename is the document identity (unlike hashed data sources). No auto-rename, no reject. |
 | Tool results | Success = plain dict matching `result_schema`. Failure = raise a domain exception. No per-tool ok/error wrapper. |
@@ -611,25 +611,31 @@ Unit/integration tests already exist from earlier phases.
 
 ### 9.1 Pytest markers
 
-- `@pytest.mark.ollama` for tests that need a live local model; default `pytest` skips them.
+- [x] `@pytest.mark.ollama` for tests that need a live local model; default `pytest` skips them.
+- `pytest.ini` registers the marker and sets `addopts = -m "not ollama"`, so plain `pytest` passes with Ollama stopped and `pytest -m ollama` (command line wins) selects only the live cases.
 
 ### 9.2 Eval prompt corpus
 
-- `tests/eval/prompts.json`: tool-selection (list vs sample vs profile); fenced-JSON trap; one-word speed; short pandas code (coding model).
-- No sensitive data.
+- [x] `tests/eval/prompts.json`: tool-selection (list vs sample vs profile); fenced-JSON trap; one-word speed; short pandas code (coding model).
+- [x] No sensitive data.
+- Six cases, each `id` / `kind` / `role` / `system_prompt` / `user` / `expect`. `tests/eval/corpus.py` loads and validates them; a malformed corpus raises `CorpusError` instead of silently skipping. Tool-selection cases prepend the real `build_system_prompt()`, so eval cannot drift from the shipped prompt. Synthetic text only (`file-eval0001`, no rows, no credentials).
 
 ### 9.3 Wrap `scripts/compare_ollama_models.py`
 
-- Share corpus with the eval runner; keep the script runnable by hand (command comment at top).
+- [x] Share corpus with the eval runner; keep the script runnable by hand (command comment at top).
+- Script reads the corpus through `tests.eval.corpus` (repo root added to `sys.path`), so prompts live in one place. It still sends every prompt to all four models for latency comparison, while `pytest -m ollama` uses each case's role. `--quick` now means the speed-kind cases; `--prompt` and `--warmup` unchanged.
 
 ### 9.4 Parse-success and tool-selection checks
 
-- Assert JSON schema success; assert chosen tool name on the mocked or live set.
-- Document how to run: `pytest -m ollama`.
+- [x] Assert JSON schema success; assert chosen tool name on the mocked or live set.
+- [x] Document how to run: `pytest -m ollama`.
+- `tests/eval/test_eval_corpus.py`. Corpus-shape tests run in the default suite (a broken corpus would weaken the eval quietly); generation tests carry the marker. Each case gets the same one strict retry the graph allows, so the eval measures the shipped pipeline; a prose answer or a wrong tool name is not retried, matching production.
+- Two real defects surfaced on the live run and were fixed: (1) a model emitted valid tool JSON followed by a lone closing fence, which `strip_markdown_fences` did not strip — one unbalanced delimiter is now removed (two or more are still left alone, so prose is never trimmed to the object it surrounds); (2) the system prompt listed tool *names* only, so the model guessed `file_path` instead of `source_id`, and read "bounded-head overview" as making `profile_source` the general preview tool. The prompt now carries each tool's required and `[optional]` arguments derived from the contracts, plus one line each on list vs sample vs profile.
 
 ### 9.5 README: test and eval commands
 
-- Default `pytest`; optional Ollama eval; never call cloud APIs.
+- [x] Default `pytest`; optional Ollama eval; never call cloud APIs.
+- README `Develop` says plain `pytest` deselects `ollama`; a new `Eval` section documents `pytest -m ollama` and the comparison script, the shared corpus, what each case asserts, and that nothing in either path leaves the local Ollama host.
 
 ---
 
@@ -674,6 +680,11 @@ Not current-step work and not code `# TODO`s. Revisit when the listed step runs.
 
 ## Current focus
 
-**8.5 done.** Next: **9.1 Pytest markers**.
-Do not start 9.1 until you say to proceed.
+**Phase 9 done (9.1–9.5).** Next: your review.
+Default `pytest` = 537 passed, 6 deselected. `pytest -m ollama` = 6 passed
+against the local lineup.
+The live eval found and fixed two real defects: an unbalanced markdown fence
+broke tool-call parsing, and the system prompt never told the model which
+arguments each tool takes (it guessed `file_path`) or when to prefer
+`read_file_sample` over `profile_source`.
 Docker is still not in v1; README/spec say when to revisit.

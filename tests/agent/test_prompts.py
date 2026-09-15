@@ -76,6 +76,14 @@ def test_prompt_lists_registered_tools():
         assert name in text
 
 
+def test_prompt_lists_tool_arguments_from_the_contracts():
+    """A live model guessed file_path; required argument names must be shown."""
+    text = build_system_prompt(hitl_mode=HITL_MODE_STANDARD)
+    assert "read_file_sample(source_id, [n_rows])" in text
+    assert "query_database(connection_id, sql, [params])" in text
+    assert "list_available_sources()" in text
+
+
 def test_prompt_does_not_hardcode_a_model_name():
     """Model tags stay in env settings, not in the prompt text."""
     text = build_system_prompt(hitl_mode=HITL_MODE_STANDARD).lower()

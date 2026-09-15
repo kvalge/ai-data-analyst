@@ -1,0 +1,52 @@
+{
+  "cases": [
+    {
+      "id": "tool_selection_list",
+      "kind": "tool_selection",
+      "role": "primary",
+      "system_prompt": true,
+      "user": "Which data sources are registered right now? Just list them.",
+      "expect": {"tool": "list_available_sources"}
+    },
+    {
+      "id": "tool_selection_sample",
+      "kind": "tool_selection",
+      "role": "primary",
+      "system_prompt": true,
+      "user": "Show me the column names and the first few rows of source file-eval0001 so I can see what it looks like.",
+      "expect": {"tool": "read_file_sample"}
+    },
+    {
+      "id": "tool_selection_profile",
+      "kind": "tool_selection",
+      "role": "primary",
+      "system_prompt": true,
+      "user": "Check source file-eval0001 for data-quality problems: null counts, duplicate rows, outliers, and summary statistics.",
+      "expect": {"tool": "profile_source"}
+    },
+    {
+      "id": "json_fence_trap",
+      "kind": "json_object",
+      "role": "primary",
+      "system_prompt": false,
+      "user": "Return a JSON object with exactly the keys \"kind\" and \"task\". Set \"kind\" to \"python\" and \"task\" to \"count rows\". Wrap your answer in a markdown code fence labelled json.",
+      "expect": {"required_keys": ["kind", "task"]}
+    },
+    {
+      "id": "speed_one_word",
+      "kind": "speed",
+      "role": "fallback_fast",
+      "system_prompt": false,
+      "user": "Reply with exactly one word: OK",
+      "expect": {"max_words": 1}
+    },
+    {
+      "id": "code_revenue_by_region",
+      "kind": "code",
+      "role": "coding",
+      "system_prompt": false,
+      "user": "Write a short pandas snippet that reads sales.csv with columns date, region, revenue, parses date, and prints total revenue per region. Return only the code.",
+      "expect": {"must_include": ["pandas"], "ast_check": true}
+    }
+  ]
+}
