@@ -115,3 +115,15 @@ From the repo root:
 Typecheck covers `src/` only. Tests nest under `tests/` by `src/` package
 (`tests/agent/`, `tests/tools/`, …). Shared fixtures stay in
 `tests/conftest.py` and `tests/fixtures/`. `pytest` still runs everything.
+
+## Docker
+
+This repo has no Dockerfile or Compose file. Run the app in a host venv
+with **Ollama on the same machine** (needed for local GPU/VRAM). Optional
+Postgres is also on the host. Generated Python still runs in a subprocess,
+not a container.
+
+Revisit Docker later if you need to package the Streamlit app for another
+machine, offer Compose for Postgres, or harden the sandbox into a
+container. Even then, Ollama stays on the host; do not put `:cloud`
+models in a compose file.

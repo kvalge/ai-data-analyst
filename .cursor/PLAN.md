@@ -4,7 +4,7 @@
 
 Working rules: one step at a time; after a step, update this file, then ask for review; if approved, ask whether to commit; then start the next step only after permission. Code `# TODO` / `# FIXME` comments are also listed under **Open TODOs (code)** below.
 
-**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** **3.12 done.** **3.13 done.** **4.1 done.** **4.2 done.** **4.3 done.** **4.4 done.** **4.5 done.** **4.6 done.** **4.7 done.** **4.8 done.** **4.9 done.** **4.10 done.** **4.11 done.** **4.12 done.** **5.1 done.** **5.2 done.** **5.3 done.** **5.4 done.** **5.5 done.** **6.1 done.** **6.2 done.** **6.3 done.** **6.4 done.** **6.5 done.** **6.6 skipped.** **7.1 done.** **7.2 done.** **7.3 done.** **7.4 done.** **7.5 skipped.** **8.1 done.** **8.2 done.** **8.3 done.** **8.4 done.** Next step: **8.5**.
+**Status:** Phase 0 done. **1.1 done.** **1.2 done.** **1.3 done.** **1.3a done.** **1.4 done.** **1.5 done.** **1.6 done.** **1.7 done.** **1.8 done.** **1.9 done.** **1.10 done.** **1.11 done.** **1.12 done.** **1.13 done.** **1.14 done.** **1.15 done.** **2.1 done.** **2.2 done.** **2.3 done.** **2.4 done.** **2.5 done.** **2.6 done.** **2.7 done.** **2.8 done.** **2.9 done.** **2.10 done.** **2.11 done.** **2.12 done.** **2.13 done.** **2.14 done.** **3.1 done.** **3.2 done.** **3.3 done.** **3.4 done.** **3.5 done.** **3.6 done.** **3.7 done.** **3.8 done.** **3.9 done.** **3.10 done.** **3.11 done.** **3.12 done.** **3.13 done.** **4.1 done.** **4.2 done.** **4.3 done.** **4.4 done.** **4.5 done.** **4.6 done.** **4.7 done.** **4.8 done.** **4.9 done.** **4.10 done.** **4.11 done.** **4.12 done.** **5.1 done.** **5.2 done.** **5.3 done.** **5.4 done.** **5.5 done.** **6.1 done.** **6.2 done.** **6.3 done.** **6.4 done.** **6.5 done.** **6.6 skipped.** **7.1 done.** **7.2 done.** **7.3 done.** **7.4 done.** **7.5 skipped.** **8.1 done.** **8.2 done.** **8.3 done.** **8.4 done.** **8.5 done.** Next step: **9.1**.
 
 Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 
@@ -20,7 +20,7 @@ Legend: `[x]` done · `[ ]` not started · `[~]` in progress
 | Chart library | Sandbox writes PNG (matplotlib). Streamlit shows the image. No Plotly server. |
 | RAG v1 | Chunk context files + keyword/TF-IDF retrieval. No vector DB and no embedding model (6.6 skipped until TF-IDF is too weak). PDF text via `pypdf`. |
 | MCP server | Not in v1. In-process MCP-shaped contracts only. |
-| Docker | Not in this plan. Phase 8 only documents when to revisit. |
+| Docker | Documented in 8.5; not adopted. No Dockerfile/Compose. Ollama stays on the host. |
 | Type checker | **pyright**, `basic` mode, **`src/` only**. No mypy, no strict mode, no pandas stubs, no CI/pre-commit hook in v1. Run by hand (`pyright`) like `pytest`. |
 | Test layout | Nested under `tests/` mirroring `src/` packages. Root `conftest.py`, `tests/fixtures/`, and `tests/tool_schema.py` stay shared. Default `pytest` still runs everything. |
 | File source registry | **One** `registry.json` in `UPLOAD_DIR`. Single-user local; no per-source sidecars. 1.7 also adds `list_file_sources()` (not the 1.8 tool) for round-trip tests. |
@@ -599,8 +599,9 @@ No sandbox code execution yet. Tools: `list_available_sources`, `read_file_sampl
 
 ### 8.5 Docker revisit note
 
-- Short section in README/spec: when Docker would be considered; Ollama stays on the host; no compose in this phase.
-- Spec key-decision only if we actually adopt Docker.
+- [x] Short section in README/spec: when Docker would be considered; Ollama stays on the host; no compose in this phase.
+- [x] Spec key-decision only if we actually adopt Docker.
+- Docker is still not in v1. README and spec say to reconsider for packaging the Streamlit app, Compose for Postgres, or a container sandbox. No Dockerfile, no compose file. No spec key-decision (Docker was not adopted).
 
 ---
 
@@ -673,6 +674,6 @@ Not current-step work and not code `# TODO`s. Revisit when the listed step runs.
 
 ## Current focus
 
-**8.4 done.** Next: **8.5 Docker revisit note**.
-Do not start 8.5 until you say to proceed.
-Audit JSONL covers profile, tools, generated code, HITL, and sandbox outcome. Disk errors warn.
+**8.5 done.** Next: **9.1 Pytest markers**.
+Do not start 9.1 until you say to proceed.
+Docker is still not in v1; README/spec say when to revisit.
